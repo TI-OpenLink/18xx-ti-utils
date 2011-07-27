@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/data/busybox/sh
 
 # Bootlevels
 #   1 - start only inetd			0000 0001
