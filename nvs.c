@@ -41,7 +41,7 @@ int nvs_fill_radio_params(int fd, struct wl12xx_ini *ini, char *buf)
 
 	if (ini) {	/* for reference NVS */
 		unsigned char *c = (unsigned char *)gp;
-		int i;
+		size_t i;
 
 		for (i = 0; i < size; i++)
 			write(fd, c++, 1);
@@ -77,10 +77,9 @@ static int nvs_fill_radio_params_128x(int fd, struct wl12xx_ini *ini, char *buf)
 
 int nvs_set_autofem(int fd, char *buf, unsigned char val)
 {
-	size_t size;
+	size_t size, i;
 	struct wl1271_ini *gp;
 	unsigned char *c;
-	int i;
 
 	if (buf == NULL)
 		return 1;
@@ -100,10 +99,9 @@ int nvs_set_autofem(int fd, char *buf, unsigned char val)
 
 int nvs_set_autofem_128x(int fd, char *buf, unsigned char val)
 {
-	size_t size;
+	size_t size, i;
 	struct wl128x_ini *gp;
 	unsigned char *c;
-	int i;
 
 	if (buf == NULL)
 		return 1;
@@ -123,10 +121,9 @@ int nvs_set_autofem_128x(int fd, char *buf, unsigned char val)
 
 int nvs_set_fem_manuf(int fd, char *buf, unsigned char val)
 {
-	size_t size;
+	size_t size, i;
 	struct wl1271_ini *gp;
 	unsigned char *c;
-	int i;
 
 	if (buf == NULL)
 		return 1;
@@ -146,10 +143,9 @@ int nvs_set_fem_manuf(int fd, char *buf, unsigned char val)
 
 int nvs_set_fem_manuf_128x(int fd, char *buf, unsigned char val)
 {
-	size_t size;
+	size_t size, i;
 	struct wl128x_ini *gp;
 	unsigned char *c;
-	int i;
 
 	if (buf == NULL)
 		return 1;
@@ -317,7 +313,7 @@ static void nvs_parse_data(const unsigned char *buf,
 	unsigned char tlv_type;
 	unsigned short tlv_len;
 	unsigned short info_idx;
-	unsigned int nvsTypeInfo;
+	unsigned int nvsTypeInfo = 0;
 	unsigned char nvs_ver_oct_idx;
 	unsigned char shift;
 
