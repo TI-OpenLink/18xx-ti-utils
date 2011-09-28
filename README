@@ -224,7 +224,7 @@ calibrator wlan0 plt reset_rx_statcs
 This is procedure changes ini part of NVS file. It helps when there is need
 to change ini part of NVS which already calibrated. 
 
-calibrator set upd_nvs <ini file> [<nvs file>]
+calibrator set upd_nvs <ini file> [<old nvs file> [<new nvs file>]]
 
 If NVS filename parameter not provided the current NVS file will be used from
 destination directory (usually /lib/firmware).
@@ -234,7 +234,7 @@ destination directory (usually /lib/firmware).
 
 	Read MAC address from NVS file
 
-calibrator get nvs_mac <nvs filename>
+calibrator get nvs_mac [<nvs filename>]
 
 
 	Push local NVS to the system:

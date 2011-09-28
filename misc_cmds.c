@@ -119,15 +119,17 @@ static int get_nvs_mac(struct nl80211_state *state, struct nl_cb *cb,
 			struct nl_msg *msg, int argc, char **argv)
 {
 	unsigned char mac_buff[12];
+	char *fname;
 	int fd;
 
 	argc -= 2;
 	argv += 2;
 
-	if (argc != 1)
-		return 2;
+	fname = get_opt_nvsinfile(argc, argv);
+	if (!fname)
+		return 1;
 
-	fd = open(argv[0], O_RDONLY);
+	fd = open(fname, O_RDONLY);
 	if (fd < 0) {
 		perror("Error opening file for reading");
 		return 1;
@@ -144,7 +146,7 @@ static int get_nvs_mac(struct nl80211_state *state, struct nl_cb *cb,
 	return 0;
 }
 
-COMMAND(get, nvs_mac, "<nvs filename>", 0, 0, CIB_NONE, get_nvs_mac,
+COMMAND(get, nvs_mac, "[<nvs filename>]", 0, 0, CIB_NONE, get_nvs_mac,
 	"Get MAC addr from NVS file (offline)");
 
 /*
@@ -284,7 +286,7 @@ COMMAND(set, ref_nvs2, "<ini file> <ini file>", 0, 0, CIB_NONE, set_ref_nvs2,
 static int set_upd_nvs(struct nl80211_state *state, struct nl_cb *cb,
 	struct nl_msg *msg, int argc, char **argv)
 {
-	char *fname = NULL;
+	char *infname = NULL, *outfname = NULL;
 	struct wl12xx_common cmn = {
 		.arch = UNKNOWN_ARCH,
 		.parse_ops = NULL
@@ -300,13 +302,24 @@ static int set_upd_nvs(struct nl80211_state *state, struct nl_cb *cb,
 		fprintf(stderr, "Fail to read ini file\n");
 		return 1;
 	}
+	argc--;
+	argv++;
+
+	infname = get_opt_nvsinfile(argc, argv);
+	if (!infname)
+		return 1;
+
+	if (argc) {
+		argc--;
+		argv++;
+	}
+	outfname = get_opt_nvsoutfile(argc, argv);
+	if (!outfname)
+		return 1;
 
 	cfg_nvs_ops(&cmn);
 
-	if (argc == 2)
-		fname = *++argv;
-
-	if (update_nvs_file(fname, &cmn)) {
+	if (update_nvs_file(infname, outfname, &cmn)) {
 		fprintf(stderr, "Fail to update NVS file\n");
 		return 1;
 	}
@@ -317,7 +330,7 @@ static int set_upd_nvs(struct nl80211_state *state, struct nl_cb *cb,
 	return 0;
 }
 
-COMMAND(set, upd_nvs, "<ini file> [<nvs file>]", 0, 0, CIB_NONE, set_upd_nvs,
+COMMAND(set, upd_nvs, "<ini file> [<nvs infile>] [<nvs_outfile>]", 0, 0, CIB_NONE, set_upd_nvs,
 	"Update values of a NVS from INI file");
 
 static int get_dump_nvs(struct nl80211_state *state, struct nl_cb *cb,
@@ -332,8 +345,9 @@ static int get_dump_nvs(struct nl80211_state *state, struct nl_cb *cb,
 	argc -= 2;
 	argv += 2;
 
-	if (argc > 0)
-		fname = *argv;
+	fname = get_opt_nvsinfile(argc, argv);
+	if (!fname)
+		return 1;
 
 	if (dump_nvs_file(fname, &cmn)) {
 		fprintf(stderr, "Fail to dump NVS file\n");

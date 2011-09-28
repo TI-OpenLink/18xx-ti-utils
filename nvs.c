@@ -29,6 +29,38 @@
 
 static const char if_name_fmt[] = "wlan%d";
 
+static char* get_opt_file(int argc, char **argv, char *dir, char *def)
+{
+	char *name = NULL;
+	if (argc < 0)
+		return NULL;
+	else if (argc == 0) {
+		name = def;
+		printf("The path to input %s file not provided, "
+		       "use default (%s)\n", dir, name);
+	}
+	else
+		name = *argv;
+	return name;
+}
+
+
+char *get_opt_nvsinfile(int argc, char **argv)
+{
+	char *name = get_opt_file(argc, argv, "input", CURRENT_NVS_NAME);
+	if (file_exist(name) < 0) {
+		fprintf(stderr, "File not found %s\n", name);
+		return NULL;
+	}
+	return name;
+}
+
+char *get_opt_nvsoutfile(int argc, char **argv)
+{
+	char *name = get_opt_file(argc, argv, "output", NEW_NVS_NAME);
+	return name;
+}
+
 int nvs_fill_radio_params(int fd, struct wl12xx_ini *ini, char *buf)
 {
 	size_t size;
@@ -266,24 +298,13 @@ static int read_nvs(const char *nvs_file, char *buf,
 	int size, int *nvs_sz)
 {
 	int fl_sz;
-	char file2read[FILENAME_MAX];
-
-	if (nvs_file == NULL || strlen(nvs_file) < 2) {
-		printf("\nThe path to NVS file not provided, "
-			"use default (%s)\n", CURRENT_NVS_NAME);
-
-		strncpy(file2read, CURRENT_NVS_NAME, strlen(CURRENT_NVS_NAME));
-
-	} else
-		strncpy(file2read, nvs_file, strlen(nvs_file));
-
-	fl_sz = file_exist(file2read);
+	fl_sz = file_exist(nvs_file);
 	if (fl_sz < 0) {
-		fprintf(stderr, "File %s not exists\n", CURRENT_NVS_NAME);
+		fprintf(stderr, "File %s not exists\n", nvs_file);
 		return 1;
 	}
 
-	return read_from_current_nvs(file2read, buf, size, nvs_sz);
+	return read_from_current_nvs(nvs_file, buf, size, nvs_sz);
 }
 
 static int fill_nvs_def_rx_params(int fd)
@@ -650,17 +671,17 @@ out:
 	return res;
 }
 
-int update_nvs_file(const char *nvs_file, struct wl12xx_common *cmn)
+int update_nvs_file(const char *nvs_infile, const char *nvs_outfile, struct wl12xx_common *cmn)
 {
 	int new_nvs, res = 0;
 	char buf[2048];
 
-	res = read_nvs(nvs_file, buf, BUF_SIZE_4_NVS_FILE, NULL);
+	res = read_nvs(nvs_infile, buf, BUF_SIZE_4_NVS_FILE, NULL);
 	if (res)
 		return 1;
 
 	/* create new NVS file */
-	new_nvs = open(NEW_NVS_NAME,
+	new_nvs = open(nvs_outfile,
 		O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 	if (new_nvs < 0) {
 		fprintf(stderr, "%s> Unable to open new NVS file\n", __func__);
