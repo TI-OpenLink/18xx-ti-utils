@@ -348,7 +348,8 @@ static int set_autofem(struct nl80211_state *state, struct nl_cb *cb,
 			struct nl_msg *msg, int argc, char **argv)
 {
 	char *fname = NULL;
-	unsigned char val;
+	int res;
+	unsigned int val;
 	struct wl12xx_common cmn = {
 		.arch = UNKNOWN_ARCH,
 		.parse_ops = NULL
@@ -362,10 +363,15 @@ static int set_autofem(struct nl80211_state *state, struct nl_cb *cb,
 		return 2;
 	}
 
-	sscanf(argv[0], "%2x", (unsigned int *)&val);
+	res = sscanf(argv[0], "%x", &val);
+	if (res != 1 || val > 1) {
+		fprintf(stderr, "Invalid argument\n");
+		return 1;
+	}
+	argv++;
+	argc--;
 
-	if (argc == 2)
-		fname = argv[1];
+	fname = get_opt_nvsinfile(argc, argv);
 
 	if (set_nvs_file_autofem(fname, val, &cmn)) {
 		fprintf(stderr, "Fail to set AutoFEM\n");
@@ -382,7 +388,8 @@ static int set_fem_manuf(struct nl80211_state *state, struct nl_cb *cb,
 			struct nl_msg *msg, int argc, char **argv)
 {
 	char *fname = NULL;
-	unsigned char val;
+	int res;
+	unsigned int val;
 	struct wl12xx_common cmn = {
 		.arch = UNKNOWN_ARCH,
 		.parse_ops = NULL
@@ -395,11 +402,15 @@ static int set_fem_manuf(struct nl80211_state *state, struct nl_cb *cb,
 		fprintf(stderr, "Missing argument\n");
 		return 2;
 	}
+	res = sscanf(argv[0], "%x", &val);
+	if(res != 1 || val >= WL1271_INI_FEM_MODULE_COUNT) {
+		fprintf(stderr, "Invalid argument\n");
+		return 1;
+	}
+	argv++;
+	argc--;
 
-	sscanf(argv[0], "%2x", (unsigned int *)&val);
-
-	if (argc == 2)
-		fname = argv[1];
+	fname = get_opt_nvsinfile(argc, argv);
 
 	if (set_nvs_file_fem_manuf(fname, val, &cmn)) {
 		fprintf(stderr, "Fail to set AutoFEM\n");

@@ -801,7 +801,7 @@ int set_nvs_file_autofem(const char *nvs_file, unsigned char val,
 	cfg_nvs_ops(cmn);
 
 	/* create new NVS file */
-	new_nvs = open(NEW_NVS_NAME,
+	new_nvs = open(nvs_file,
 		O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 	if (new_nvs < 0) {
 		fprintf(stderr, "%s> Unable to open new NVS file\n", __func__);
@@ -847,7 +847,7 @@ int set_nvs_file_fem_manuf(const char *nvs_file, unsigned char val,
 	cfg_nvs_ops(cmn);
 
 	/* create new NVS file */
-	new_nvs = open(NEW_NVS_NAME,
+	new_nvs = open(nvs_file,
 		O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 	if (new_nvs < 0) {
 		fprintf(stderr, "%s> Unable to open new NVS file\n", __func__);
