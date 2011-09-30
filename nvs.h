@@ -24,4 +24,6 @@ int set_nvs_file_autofem(const char *nvs_file, unsigned char val,
 int set_nvs_file_fem_manuf(const char *nvs_file, unsigned char val,
 	struct wl12xx_common *cmn);
 
+int info_nvs_file(const char *nvs_file);
+
 #endif /* __NVS_H */

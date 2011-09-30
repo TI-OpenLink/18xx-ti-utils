@@ -360,6 +360,29 @@ static int get_dump_nvs(struct nl80211_state *state, struct nl_cb *cb,
 COMMAND(get, dump_nvs, "[<nvs file>]", 0, 0, CIB_NONE, get_dump_nvs,
 	"Dump NVS file, specified by option or current");
 
+static int get_info_nvs(struct nl80211_state *state, struct nl_cb *cb,
+			struct nl_msg *msg, int argc, char **argv)
+{
+	char *fname;
+
+	argc -= 2;
+	argv += 2;
+
+	fname = get_opt_nvsinfile(argc, argv);
+	if(!fname)
+		return 1;
+
+	if (info_nvs_file(fname)) {
+		fprintf(stderr, "Fail to read info from NVS file\n");
+		return 1;
+	}
+
+	return 0;
+}
+
+COMMAND(get, info_nvs, "[<nvs file>]", 0, 0, CIB_NONE, get_info_nvs,
+	"Print information from nvs file");
+
 static int set_autofem(struct nl80211_state *state, struct nl_cb *cb,
 			struct nl_msg *msg, int argc, char **argv)
 {
