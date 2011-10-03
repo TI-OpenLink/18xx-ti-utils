@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <limits.h>
 
 #include <netlink/genl/genl.h>
 #include <netlink/genl/family.h>
@@ -106,50 +107,91 @@ static int split_line(char *line, char **name, char **value)
 	return 0;
 }
 
-#define COMPARE_N_ADD(temp, str, val, ptr, size)		\
-	if (strncmp(temp, str, sizeof(temp)) == 0) {		\
-		int i;						\
-		for (i = 0; i < size; i++, val += 3) {		\
-			(ptr)[i] = strtol(val, NULL, 16);	\
-		}						\
-		return 0;					\
+/* Parse array of unsigned chars */
+static int parse_uc_a(char* name, char *val, unsigned char *out, size_t exp_size)
+{
+	size_t i = 0;
+	long v;
+	char *endval;
+
+	while (*val) {
+		/* Advance to next token */
+		while (*val == ' ' || *val == ',')
+			val++;
+
+		if (i >= exp_size) {
+			fprintf(stderr, "Too many params for %s\n", name);
+			return 1;
+		}
+		v = strtol(val, &endval, 16);
+
+		if (endval == val) {
+			fprintf(stderr, "Syntax error parsing %s\n", name);
+			return 1;
+		}
+		if (v > (long) UCHAR_MAX) {
+			fprintf(stderr, "Overflow parsing %s\n", name);
+			return 1;
+		}
+		out[i++] = v;
+		val = endval;
 	}
 
-#define DBG_COMPARE_N_ADD(temp, str, val, ptr, size)		\
-	if (strncmp(temp, str, sizeof(temp)) == 0) {		\
-		int i;						\
-		for (i = 0; i < size; i++, val += 3) {		\
-			(ptr)[i] = strtol(val, NULL, 16);	\
-		}						\
-		printf("%s ", temp);				\
-		for (i = 0; i < size; i++) {			\
-			printf("%02X ", (ptr)[i]);		\
-			p++;					\
-		}						\
-		printf("\n");					\
-		return 0;					\
+	if(exp_size != i) {
+		fprintf(stderr, "Too few parameters for %s\n", name);
+		return 1;
 	}
 
-#define COMPARE_N_ADD2(temp, str, val, ptr, size)		\
-	if (strncmp(temp, str, sizeof(temp)) == 0) {		\
-		int i;						\
-		for (i = 0; i < size; i++, val += 5) {		\
-			(ptr)[i] = strtol(val, NULL, 16);	\
-		}						\
-		return 0;					\
+	return 0;
+}
+
+/* Parse array of __le16 */
+static int parse_ui_a(char* name, char *val, __le16 *out, size_t exp_size)
+{
+	size_t i = 0;
+	long v;
+	char *endval;
+
+	while (*val) {
+		/* Advance to next token */
+		while (*val == ' ' || *val == ',')
+			val++;
+
+		if (i >= exp_size) {
+			fprintf(stderr, "Too many params for %s\n", name);
+			return 1;
+		}
+		v = strtol(val, &endval, 16);
+
+		if (endval == val) {
+			fprintf(stderr, "Syntax error parsing %s\n", name);
+			return 1;
+		}
+		if (v > (long) INT16_MAX) {
+			fprintf(stderr, "Overflow parsing %s\n", name);
+			return 1;
+		}
+		out[i++] = v;
+
+		val = endval;
 	}
 
-#define DBG_COMPARE_N_ADD2(temp, str, val, ptr, size)		\
+	if(exp_size != i) {
+		fprintf(stderr, "Too few parameters for %s\n", name);
+		return 1;
+	}
+
+	return 0;
+}
+
+#define COMPARE_N_ADD(temp, str, val, ptr)			\
 	if (strncmp(temp, str, sizeof(temp)) == 0) {		\
-		int i;						\
-		for (i = 0; i < size; i++, val += 5) {		\
-			(ptr)[i] = strtol(val, NULL, 16);	\
-		}						\
-		printf("%s ", temp);				\
-		for (i = 0; i < size; i++)  			\
-			printf("%04X ", (ptr)[i]);		\
-		printf("\n");					\
-		return 0;					\
+		return parse_uc_a(temp, val, (unsigned char*) ptr, sizeof(*ptr)); \
+	}
+
+#define COMPARE_N_ADD2(temp, str, val, ptr)		\
+	if (strncmp(temp, str, sizeof(temp)) == 0) {		\
+		return parse_ui_a(temp, val, (__le16*) ptr, sizeof(*ptr)/2); \
 	}
 
 static int parse_general_prms(char *l, struct wl12xx_common *cmn,
@@ -162,24 +204,24 @@ static int parse_general_prms(char *l, struct wl12xx_common *cmn,
 		return 1;
 
 	COMPARE_N_ADD("TXBiPFEMAutoDetect", l, val,
-		&gp->tx_bip_fem_auto_detect, 1);
+		&gp->tx_bip_fem_auto_detect);
 
 	cmn->auto_fem = gp->tx_bip_fem_auto_detect;
 
 	COMPARE_N_ADD("TXBiPFEMManufacturer", l, val,
-		&gp->tx_bip_fem_manufacturer, 1);
+		&gp->tx_bip_fem_manufacturer);
 
-	COMPARE_N_ADD("RefClk", l, val, &gp->ref_clock, 1);
+	COMPARE_N_ADD("RefClk", l, val, &gp->ref_clock);
 
-	COMPARE_N_ADD("SettlingTime", l, val, &gp->settling_time, 1);
+	COMPARE_N_ADD("SettlingTime", l, val, &gp->settling_time);
 
 	COMPARE_N_ADD("ClockValidOnWakeup", l, val,
-		&gp->clk_valid_on_wakeup, 1);
+		&gp->clk_valid_on_wakeup);
 
-	COMPARE_N_ADD("DC2DCMode", l, val, &gp->dc2dc_mode, 1);
+	COMPARE_N_ADD("DC2DCMode", l, val, &gp->dc2dc_mode);
 
 	COMPARE_N_ADD("Single_Dual_Band_Solution", l, val,
-		&gp->dual_mode_select, 1);
+		&gp->dual_mode_select);
 
 	if (cmn->dual_mode == DUAL_MODE_UNSET)
 		cmn->dual_mode = gp->dual_mode_select;
@@ -188,18 +230,15 @@ static int parse_general_prms(char *l, struct wl12xx_common *cmn,
 		return 1;
 	}
 
-	COMPARE_N_ADD("Settings", l, val, &gp->general_settings, 1);
+	COMPARE_N_ADD("Settings", l, val, &gp->general_settings);
 
-	COMPARE_N_ADD("SRState", l, val, &gp->sr_state, 1);
+	COMPARE_N_ADD("SRState", l, val, &gp->sr_state);
 
-	COMPARE_N_ADD("SRF1", l, val,
-		gp->srf1, WL1271_INI_MAX_SMART_REFLEX_PARAM);
+	COMPARE_N_ADD("SRF1", l, val, &gp->srf1);
 
-	COMPARE_N_ADD("SRF2", l, val,
-		gp->srf2, WL1271_INI_MAX_SMART_REFLEX_PARAM);
+	COMPARE_N_ADD("SRF2", l, val, &gp->srf2);
 
-	COMPARE_N_ADD("SRF3", l, val,
-		gp->srf3, WL1271_INI_MAX_SMART_REFLEX_PARAM);
+	COMPARE_N_ADD("SRF3", l, val, &gp->srf3);
 
 	fprintf(stderr, "Unable to parse: (%s)\n", l);
 
@@ -216,36 +255,34 @@ static int parse_general_prms_128x(char *l, struct wl12xx_common *cmn,
 	if (split_line(l, &name, &val))
 		return 1;
 
+
 	COMPARE_N_ADD("TXBiPFEMAutoDetect", l, val,
-		&gp->tx_bip_fem_auto_detect, 1);
+		&gp->tx_bip_fem_auto_detect);
 
 	COMPARE_N_ADD("TXBiPFEMManufacturer", l, val,
-		&gp->tx_bip_fem_manufacturer, 1);
+		&gp->tx_bip_fem_manufacturer);
 
 	cmn->auto_fem = gp->tx_bip_fem_auto_detect;
 
-	COMPARE_N_ADD("RefClk", l, val, &gp->ref_clock, 1);
+	COMPARE_N_ADD("RefClk", l, val, &gp->ref_clock);
 
-	COMPARE_N_ADD("SettlingTime", l, val, &gp->settling_time, 1);
+	COMPARE_N_ADD("SettlingTime", l, val, &gp->settling_time);
 
-	COMPARE_N_ADD("ClockValidOnWakeup", l, val,
-		&gp->clk_valid_on_wakeup, 1);
+	COMPARE_N_ADD("ClockValidOnWakeup", l, val, &gp->clk_valid_on_wakeup);
 
-	COMPARE_N_ADD("TCXO_Clk", l, val, &gp->tcxo_ref_clock, 1);
+	COMPARE_N_ADD("TCXO_Clk", l, val, &gp->tcxo_ref_clock);
 
-	COMPARE_N_ADD("TCXO_SettlingTime", l, val, &gp->tcxo_settling_time, 1);
+	COMPARE_N_ADD("TCXO_SettlingTime", l, val, &gp->tcxo_settling_time);
 
 	COMPARE_N_ADD("TCXO_ClockValidOnWakeup", l, val,
-		&gp->tcxo_valid_on_wakeup, 1);
+		&gp->tcxo_valid_on_wakeup);
 
-	COMPARE_N_ADD("TCXO_LDO_Voltage", l, val,
-		&gp->tcxo_ldo_voltage, 1);
+	COMPARE_N_ADD("TCXO_LDO_Voltage", l, val, &gp->tcxo_ldo_voltage);
 
-	COMPARE_N_ADD("Platform_configuration", l, val,
-		&gp->platform_conf, 1);
+	COMPARE_N_ADD("Platform_configuration", l, val, &gp->platform_conf);
 
 	COMPARE_N_ADD("Single_Dual_Band_Solution", l, val,
-		&gp->dual_mode_select, 1);
+		&gp->dual_mode_select);
 
 	if (cmn->dual_mode == DUAL_MODE_UNSET)
 		cmn->dual_mode = gp->dual_mode_select;
@@ -254,21 +291,17 @@ static int parse_general_prms_128x(char *l, struct wl12xx_common *cmn,
 		return 1;
 	}
 
-	COMPARE_N_ADD("Settings", l, val,
-		gp->general_settings, WL128X_INI_MAX_SETTINGS_PARAM);
+	COMPARE_N_ADD("Settings", l, val, &gp->general_settings);
 
-	COMPARE_N_ADD("XTALItrimVal", l, val, &gp->xtal_itrim_val, 1);
+	COMPARE_N_ADD("XTALItrimVal", l, val, &gp->xtal_itrim_val);
 
-	COMPARE_N_ADD("SRState", l, val, &gp->sr_state, 1);
+	COMPARE_N_ADD("SRState", l, val, &gp->sr_state);
 
-	COMPARE_N_ADD("SRF1", l, val,
-		gp->srf1, WL1271_INI_MAX_SMART_REFLEX_PARAM);
+	COMPARE_N_ADD("SRF1", l, val, &gp->srf1);
 
-	COMPARE_N_ADD("SRF2", l, val,
-		gp->srf2, WL1271_INI_MAX_SMART_REFLEX_PARAM);
+	COMPARE_N_ADD("SRF2", l, val, &gp->srf2);
 
-	COMPARE_N_ADD("SRF3", l, val,
-		gp->srf3, WL1271_INI_MAX_SMART_REFLEX_PARAM);
+	COMPARE_N_ADD("SRF3", l, val, &gp->srf3);
 
 	fprintf(stderr, "Unable to parse: (%s)\n", l);
 
@@ -285,14 +318,13 @@ static int parse_band2_prms(char *l, struct wl12xx_ini *p)
 		return 1;
 
 	COMPARE_N_ADD("RxTraceInsertionLoss_2_4G", l, val,
-		&gp->rx_trace_insertion_loss, 1);
+		&gp->rx_trace_insertion_loss);
 
 	COMPARE_N_ADD("TXTraceLoss_2_4G", l, val,
-		&gp->tx_trace_loss, 1);
+		&gp->tx_trace_loss);
 
 	COMPARE_N_ADD("RxRssiAndProcessCompensation_2_4G", l, val,
-		gp->rx_rssi_process_compens,
-		WL1271_INI_RSSI_PROCESS_COMPENS_SIZE);
+		&gp->rx_rssi_process_compens);
 
 	fprintf(stderr, "Unable to parse: (%s)\n", l);
 
@@ -308,10 +340,9 @@ static int parse_band2_prms_128x(char *l, struct wl12xx_ini *p)
 		return 1;
 
 	COMPARE_N_ADD("RxTraceInsertionLoss_2_4G", l, val,
-		&gp->rx_trace_insertion_loss, 1);
+		&gp->rx_trace_insertion_loss);
 
-	COMPARE_N_ADD("TxTraceLoss_2_4G", l, val,
-		gp->tx_trace_loss, WL1271_INI_CHANNEL_COUNT_2);
+	COMPARE_N_ADD("TxTraceLoss_2_4G", l, val, &gp->tx_trace_loss);
 
 	fprintf(stderr, "Unable to parse: (%s)\n", l);
 
@@ -328,14 +359,13 @@ static int parse_band5_prms(char *l, struct wl12xx_ini *p)
 		return 1;
 
 	COMPARE_N_ADD("RxTraceInsertionLoss_5G", l, val,
-		gp->rx_trace_insertion_loss, 7);
+		&gp->rx_trace_insertion_loss);
 
 	COMPARE_N_ADD("TXTraceLoss_5G", l, val,
-		gp->tx_trace_loss, 7);
+		&gp->tx_trace_loss);
 
 	COMPARE_N_ADD("RxRssiAndProcessCompensation_5G", l, val,
-		gp->rx_rssi_process_compens,
-		WL1271_INI_RSSI_PROCESS_COMPENS_SIZE);
+		&gp->rx_rssi_process_compens);
 
 	fprintf(stderr, "Unable to parse: (%s)\n", l);
 
@@ -351,10 +381,10 @@ static int parse_band5_prms_128x(char *l, struct wl12xx_ini *p)
 		return 1;
 
 	COMPARE_N_ADD("RxTraceInsertionLoss_5G", l, val,
-		gp->rx_trace_insertion_loss, 7);
+		&gp->rx_trace_insertion_loss);
 
 	COMPARE_N_ADD("TxTraceLoss_5G", l, val,
-		gp->tx_trace_loss, 7);
+		&gp->tx_trace_loss);
 
 	fprintf(stderr, "Unable to parse: (%s)\n", l);
 
@@ -371,50 +401,43 @@ static int parse_fem0_band2_prms(char *l, struct wl12xx_ini *p)
 		return 1;
 
 	COMPARE_N_ADD2("FEM0_TXBiPReferencePDvoltage_2_4G", l, val,
-		&gp->tx_bip_ref_pd_voltage, 1);
+		&gp->tx_bip_ref_pd_voltage);
 
 	COMPARE_N_ADD("FEM0_TxBiPReferencePower_2_4G", l, val,
-		&gp->tx_bip_ref_power, 1);
+		&gp->tx_bip_ref_power);
 
 	COMPARE_N_ADD("FEM0_TxBiPOffsetdB_2_4G", l, val,
-		&gp->tx_bip_ref_offset, 1);
+		&gp->tx_bip_ref_offset);
 
 	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_2_4G_Normal", l, val,
-		gp->tx_per_rate_pwr_limits_normal,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_normal);
 
 	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_2_4G_Degraded", l, val,
-		gp->tx_per_rate_pwr_limits_degraded,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_degraded);
 
 	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_2_4G_Extreme", l, val,
-		gp->tx_per_rate_pwr_limits_extreme,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_extreme);
 
 	COMPARE_N_ADD("FEM0_DegradedLowToNormalThr_2_4G", l, val,
-		&gp->degraded_low_to_normal_thr, 1);
+		&gp->degraded_low_to_normal_thr);
 
 	COMPARE_N_ADD("FEM0_NormalToDegradedHighThr_2_4G", l, val,
-		&gp->normal_to_degraded_high_thr, 1);
+		&gp->normal_to_degraded_high_thr);
 
 	COMPARE_N_ADD("FEM0_TxPerChannelPowerLimits_2_4G_11b", l, val,
-		gp->tx_per_chan_pwr_limits_11b,
-		WL1271_INI_CHANNEL_COUNT_2);
+		&gp->tx_per_chan_pwr_limits_11b);
 
 	COMPARE_N_ADD("FEM0_TxPerChannelPowerLimits_2_4G_OFDM", l, val,
-		gp->tx_per_chan_pwr_limits_ofdm,
-		WL1271_INI_CHANNEL_COUNT_2);
+		&gp->tx_per_chan_pwr_limits_ofdm);
 
 	COMPARE_N_ADD("FEM0_TxPDVsRateOffsets_2_4G", l, val,
-		gp->tx_pd_vs_rate_offsets,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_pd_vs_rate_offsets);
 
 	COMPARE_N_ADD("FEM0_TxIbiasTable_2_4G", l, val,
-		gp->tx_ibias,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_ibias);
 
 	COMPARE_N_ADD("FEM0_RxFemInsertionLoss_2_4G", l, val,
-		&gp->rx_fem_insertion_loss, 1);
+		&gp->rx_fem_insertion_loss);
 
 	fprintf(stderr, "Unable to parse: (%s)\n", l);
 
@@ -431,58 +454,49 @@ static int parse_fem0_band2_prms_128x(char *l, struct wl12xx_ini *p)
 		return 1;
 
 	COMPARE_N_ADD2("FEM0_TxBiPReferencePDvoltage_2_4G", l, val,
-		&gp->tx_bip_ref_pd_voltage, 1);
+		&gp->tx_bip_ref_pd_voltage);
 
 	COMPARE_N_ADD("FEM0_TxBiPReferencePower_2_4G", l, val,
-		&gp->tx_bip_ref_power, 1);
+		&gp->tx_bip_ref_power);
 
 	COMPARE_N_ADD("FEM0_TxBiPOffsetdB_2_4G", l, val,
-		&gp->tx_bip_ref_offset, 1);
+		&gp->tx_bip_ref_offset);
 
 	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_2_4G_Normal", l, val,
-		gp->tx_per_rate_pwr_limits_normal,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_normal);
 
 	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_2_4G_Degraded", l, val,
-		gp->tx_per_rate_pwr_limits_degraded,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_degraded);
 
 	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_2_4G_Extreme", l, val,
-		gp->tx_per_rate_pwr_limits_extreme,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_extreme);
 
 	COMPARE_N_ADD("FEM0_DegradedLowToNormalThr_2_4G", l, val,
-		&gp->degraded_low_to_normal_thr, 1);
+		&gp->degraded_low_to_normal_thr);
 
 	COMPARE_N_ADD("FEM0_NormalToDegradedHighThr_2_4G", l, val,
-		&gp->normal_to_degraded_high_thr, 1);
+		&gp->normal_to_degraded_high_thr);
 
 	COMPARE_N_ADD("FEM0_TxPerChannelPowerLimits_2_4G_11b", l, val,
-		gp->tx_per_chan_pwr_limits_11b,
-		WL1271_INI_CHANNEL_COUNT_2);
+		&gp->tx_per_chan_pwr_limits_11b);
 
 	COMPARE_N_ADD("FEM0_TxPerChannelPowerLimits_2_4G_OFDM", l, val,
-		gp->tx_per_chan_pwr_limits_ofdm,
-		WL1271_INI_CHANNEL_COUNT_2);
+		&gp->tx_per_chan_pwr_limits_ofdm);
 
 	COMPARE_N_ADD("FEM0_TxPDVsRateOffsets_2_4G", l, val,
-		gp->tx_pd_vs_rate_offsets,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_pd_vs_rate_offsets);
 
 	COMPARE_N_ADD("FEM0_TxPDVsChannelOffsets_2_4G", l, val,
-		gp->tx_pd_vs_chan_offsets,
-		WL1271_INI_CHANNEL_COUNT_2);
+		&gp->tx_pd_vs_chan_offsets);
 
 	COMPARE_N_ADD("FEM0_TxPDVsTemperature_2_4G", l, val,
-		gp->tx_pd_vs_temperature,
-		WL128X_INI_PD_VS_TEMPERATURE_RANGES);
+		&gp->tx_pd_vs_temperature);
 
 	COMPARE_N_ADD("FEM0_TxIbiasTable_2_4G", l, val,
-		gp->tx_ibias,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_ibias);
 
 	COMPARE_N_ADD("FEM0_RxFemInsertionLoss_2_4G", l, val,
-		&gp->rx_fem_insertion_loss, 1);
+		&gp->rx_fem_insertion_loss);
 
 	fprintf(stderr, "Unable to parse: (%s)\n", l);
 
@@ -499,50 +513,43 @@ static int parse_fem1_band2_prms(char *l, struct wl12xx_ini *p)
 		return 1;
 
 	COMPARE_N_ADD2("FEM1_TXBiPReferencePDvoltage_2_4G", l, val,
-		&gp->tx_bip_ref_pd_voltage, 1);
+		&gp->tx_bip_ref_pd_voltage);
 
 	COMPARE_N_ADD("FEM1_TxBiPReferencePower_2_4G", l, val,
-		&gp->tx_bip_ref_power, 1);
+		&gp->tx_bip_ref_power);
 
 	COMPARE_N_ADD("FEM1_TxBiPOffsetdB_2_4G", l, val,
-		&gp->tx_bip_ref_offset, 1);
+		&gp->tx_bip_ref_offset);
 
 	COMPARE_N_ADD("FEM1_TxPerRatePowerLimits_2_4G_Normal", l, val,
-		gp->tx_per_rate_pwr_limits_normal,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_normal);
 
 	COMPARE_N_ADD("FEM1_TxPerRatePowerLimits_2_4G_Degraded", l, val,
-		gp->tx_per_rate_pwr_limits_degraded,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_degraded);
 
 	COMPARE_N_ADD("FEM1_TxPerRatePowerLimits_2_4G_Extreme", l, val,
-		gp->tx_per_rate_pwr_limits_extreme,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_extreme);
 
 	COMPARE_N_ADD("FEM1_DegradedLowToNormalThr_2_4G", l, val,
-		&gp->degraded_low_to_normal_thr, 1);
+		&gp->degraded_low_to_normal_thr);
 
 	COMPARE_N_ADD("FEM1_NormalToDegradedHighThr_2_4G", l, val,
-		&gp->normal_to_degraded_high_thr, 1);
+		&gp->normal_to_degraded_high_thr);
 
 	COMPARE_N_ADD("FEM1_TxPerChannelPowerLimits_2_4G_11b", l, val,
-		gp->tx_per_chan_pwr_limits_11b,
-		WL1271_INI_CHANNEL_COUNT_2);
+		&gp->tx_per_chan_pwr_limits_11b);
 
 	COMPARE_N_ADD("FEM1_TxPerChannelPowerLimits_2_4G_OFDM", l, val,
-		gp->tx_per_chan_pwr_limits_ofdm,
-		WL1271_INI_CHANNEL_COUNT_2);
+		&gp->tx_per_chan_pwr_limits_ofdm);
 
 	COMPARE_N_ADD("FEM1_TxPDVsRateOffsets_2_4G", l, val,
-		gp->tx_pd_vs_rate_offsets,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_pd_vs_rate_offsets);
 
 	COMPARE_N_ADD("FEM1_TxIbiasTable_2_4G", l, val,
-		gp->tx_ibias,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_ibias);
 
 	COMPARE_N_ADD("FEM1_RxFemInsertionLoss_2_4G", l, val,
-		&gp->rx_fem_insertion_loss, 1);
+		&gp->rx_fem_insertion_loss);
 
 	fprintf(stderr, "Unable to parse: (%s)\n", l);
 
@@ -559,58 +566,49 @@ static int parse_fem1_band2_prms_128x(char *l, struct wl12xx_ini *p)
 		return 1;
 
 	COMPARE_N_ADD2("FEM1_TxBiPReferencePDvoltage_2_4G", l, val,
-		&gp->tx_bip_ref_pd_voltage, 1);
+		&gp->tx_bip_ref_pd_voltage);
 
 	COMPARE_N_ADD("FEM1_TxBiPReferencePower_2_4G", l, val,
-		&gp->tx_bip_ref_power, 1);
+		&gp->tx_bip_ref_power);
 
 	COMPARE_N_ADD("FEM1_TxBiPOffsetdB_2_4G", l, val,
-		&gp->tx_bip_ref_offset, 1);
+		&gp->tx_bip_ref_offset);
 
 	COMPARE_N_ADD("FEM1_TxPerRatePowerLimits_2_4G_Normal", l, val,
-		gp->tx_per_rate_pwr_limits_normal,
-		WL128X_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_normal);
 
 	COMPARE_N_ADD("FEM1_TxPerRatePowerLimits_2_4G_Degraded", l, val,
-		gp->tx_per_rate_pwr_limits_degraded,
-		WL128X_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_degraded);
 
 	COMPARE_N_ADD("FEM1_TxPerRatePowerLimits_2_4G_Extreme", l, val,
-		gp->tx_per_rate_pwr_limits_extreme,
-		WL128X_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_extreme);
 
 	COMPARE_N_ADD("FEM1_DegradedLowToNormalThr_2_4G", l, val,
-		&gp->degraded_low_to_normal_thr, 1);
+		&gp->degraded_low_to_normal_thr);
 
 	COMPARE_N_ADD("FEM1_NormalToDegradedHighThr_2_4G", l, val,
-		&gp->normal_to_degraded_high_thr, 1);
+		&gp->normal_to_degraded_high_thr);
 
 	COMPARE_N_ADD("FEM1_TxPerChannelPowerLimits_2_4G_11b", l, val,
-		gp->tx_per_chan_pwr_limits_11b,
-		WL1271_INI_CHANNEL_COUNT_2);
+		&gp->tx_per_chan_pwr_limits_11b);
 
 	COMPARE_N_ADD("FEM1_TxPerChannelPowerLimits_2_4G_OFDM", l, val,
-		gp->tx_per_chan_pwr_limits_ofdm,
-		WL1271_INI_CHANNEL_COUNT_2);
+		&gp->tx_per_chan_pwr_limits_ofdm);
 
 	COMPARE_N_ADD("FEM1_TxPDVsRateOffsets_2_4G", l, val,
-		gp->tx_pd_vs_rate_offsets,
-		WL128X_INI_RATE_GROUP_COUNT);
+		&gp->tx_pd_vs_rate_offsets);
 
 	COMPARE_N_ADD("FEM1_TxPDVsChannelOffsets_2_4G", l, val,
-		gp->tx_pd_vs_chan_offsets,
-		WL1271_INI_CHANNEL_COUNT_2);
+		&gp->tx_pd_vs_chan_offsets);
 
 	COMPARE_N_ADD("FEM1_TxPDVsTemperature_2_4G", l, val,
-		gp->tx_pd_vs_temperature,
-		WL128X_INI_PD_VS_TEMPERATURE_RANGES);
+		&gp->tx_pd_vs_temperature);
 
 	COMPARE_N_ADD("FEM1_TxIbiasTable_2_4G", l, val,
-		gp->tx_ibias,
-		WL128X_INI_RATE_GROUP_COUNT);
+		&gp->tx_ibias);
 
 	COMPARE_N_ADD("FEM1_RxFemInsertionLoss_2_4G", l, val,
-		&gp->rx_fem_insertion_loss, 1);
+		&gp->rx_fem_insertion_loss);
 
 	fprintf(stderr, "Unable to parse: (%s)\n", l);
 
@@ -627,46 +625,40 @@ static int parse_fem0_band5_prms(char *l, struct wl12xx_ini *p)
 		return 1;
 
 	COMPARE_N_ADD2("FEM0_TXBiPReferencePDvoltage_5G", l, val,
-		gp->tx_bip_ref_pd_voltage, WL1271_INI_SUB_BAND_COUNT_5);
+		&gp->tx_bip_ref_pd_voltage);
 
 	COMPARE_N_ADD("FEM0_TxBiPReferencePower_5G", l, val,
-		gp->tx_bip_ref_power, WL1271_INI_SUB_BAND_COUNT_5);
+		&gp->tx_bip_ref_power);
 
 	COMPARE_N_ADD("FEM0_TxBiPOffsetdB_5G", l, val,
-		gp->tx_bip_ref_offset, WL1271_INI_SUB_BAND_COUNT_5);
+		&gp->tx_bip_ref_offset);
 
 	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_5G_Normal", l, val,
-		gp->tx_per_rate_pwr_limits_normal,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_normal);
 
 	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_5G_Degraded", l, val,
-		gp->tx_per_rate_pwr_limits_degraded,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_degraded);
 
 	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_5G_Extreme", l, val,
-		gp->tx_per_rate_pwr_limits_extreme,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_extreme);
 
 	COMPARE_N_ADD("FEM0_DegradedLowToNormalThr_5G", l, val,
-		&gp->degraded_low_to_normal_thr, 1);
+		&gp->degraded_low_to_normal_thr);
 
 	COMPARE_N_ADD("FEM0_NormalToDegradedHighThr_5G", l, val,
-		&gp->normal_to_degraded_high_thr, 1);
+		&gp->normal_to_degraded_high_thr);
 
 	COMPARE_N_ADD("FEM0_TxPerChannelPowerLimits_5G_OFDM", l, val,
-		gp->tx_per_chan_pwr_limits_ofdm,
-		WL1271_INI_CHANNEL_COUNT_5);
+		&gp->tx_per_chan_pwr_limits_ofdm);
 
 	COMPARE_N_ADD("FEM0_TxPDVsRateOffsets_5G", l, val,
-		gp->tx_pd_vs_rate_offsets,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_pd_vs_rate_offsets);
 
 	COMPARE_N_ADD("FEM0_TxIbiasTable_5G", l, val,
-		gp->tx_ibias,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_ibias);
 
 	COMPARE_N_ADD("FEM0_RxFemInsertionLoss_5G", l, val,
-		gp->rx_fem_insertion_loss, WL1271_INI_SUB_BAND_COUNT_5);
+		&gp->rx_fem_insertion_loss);
 
 	fprintf(stderr, "Unable to parse: (%s)\n", l);
 
@@ -683,46 +675,40 @@ static int parse_fem1_band5_prms(char *l, struct wl12xx_ini *p)
 		return 1;
 
 	COMPARE_N_ADD2("FEM1_TXBiPReferencePDvoltage_5G", l, val,
-		gp->tx_bip_ref_pd_voltage, WL1271_INI_SUB_BAND_COUNT_5);
+		&gp->tx_bip_ref_pd_voltage);
 
 	COMPARE_N_ADD("FEM1_TxBiPReferencePower_5G", l, val,
-		gp->tx_bip_ref_power, WL1271_INI_SUB_BAND_COUNT_5);
+		&gp->tx_bip_ref_power);
 
 	COMPARE_N_ADD("FEM1_TxBiPOffsetdB_5G", l, val,
-		gp->tx_bip_ref_offset, WL1271_INI_SUB_BAND_COUNT_5);
+		&gp->tx_bip_ref_offset);
 
 	COMPARE_N_ADD("FEM1_TxPerRatePowerLimits_5G_Normal", l, val,
-		gp->tx_per_rate_pwr_limits_normal,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_normal);
 
 	COMPARE_N_ADD("FEM1_TxPerRatePowerLimits_5G_Degraded", l, val,
-		gp->tx_per_rate_pwr_limits_degraded,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_degraded);
 
 	COMPARE_N_ADD("FEM1_TxPerRatePowerLimits_5G_Extreme", l, val,
-		gp->tx_per_rate_pwr_limits_extreme,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_extreme);
 
 	COMPARE_N_ADD("FEM1_DegradedLowToNormalThr_5G", l, val,
-		&gp->degraded_low_to_normal_thr, 1);
+		&gp->degraded_low_to_normal_thr);
 
 	COMPARE_N_ADD("FEM1_NormalToDegradedHighThr_5G", l, val,
-		&gp->normal_to_degraded_high_thr, 1);
+		&gp->normal_to_degraded_high_thr);
 
 	COMPARE_N_ADD("FEM1_TxPerChannelPowerLimits_5G_OFDM", l, val,
-		gp->tx_per_chan_pwr_limits_ofdm,
-		WL1271_INI_CHANNEL_COUNT_5);
+		&gp->tx_per_chan_pwr_limits_ofdm);
 
 	COMPARE_N_ADD("FEM1_TxPDVsRateOffsets_5G", l, val,
-		gp->tx_pd_vs_rate_offsets,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_pd_vs_rate_offsets);
 
 	COMPARE_N_ADD("FEM1_TxIbiasTable_5G", l, val,
-		gp->tx_ibias,
-		WL1271_INI_RATE_GROUP_COUNT);
+		&gp->tx_ibias);
 
 	COMPARE_N_ADD("FEM1_RxFemInsertionLoss_5G", l, val,
-		gp->rx_fem_insertion_loss, WL1271_INI_SUB_BAND_COUNT_5);
+		&gp->rx_fem_insertion_loss);
 
 	fprintf(stderr, "Unable to parse: (%s)\n", l);
 
@@ -739,54 +725,46 @@ static int parse_fem1_band5_prms_128x(char *l, struct wl12xx_ini *p)
 		return 1;
 
 	COMPARE_N_ADD2("FEM1_TxBiPReferencePDvoltage_5G", l, val,
-		gp->tx_bip_ref_pd_voltage, WL1271_INI_SUB_BAND_COUNT_5);
+		&gp->tx_bip_ref_pd_voltage);
 
 	COMPARE_N_ADD("FEM1_TxBiPReferencePower_5G", l, val,
-		gp->tx_bip_ref_power, WL1271_INI_SUB_BAND_COUNT_5);
+		&gp->tx_bip_ref_power);
 
 	COMPARE_N_ADD("FEM1_TxBiPOffsetdB_5G", l, val,
-		gp->tx_bip_ref_offset, WL1271_INI_SUB_BAND_COUNT_5);
+		&gp->tx_bip_ref_offset);
 
 	COMPARE_N_ADD("FEM1_TxPerRatePowerLimits_5G_Normal", l, val,
-		gp->tx_per_rate_pwr_limits_normal,
-		WL128X_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_normal);
 
 	COMPARE_N_ADD("FEM1_TxPerRatePowerLimits_5G_Degraded", l, val,
-		gp->tx_per_rate_pwr_limits_degraded,
-		WL128X_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_degraded);
 
 	COMPARE_N_ADD("FEM1_TxPerRatePowerLimits_5G_Extreme", l, val,
-		gp->tx_per_rate_pwr_limits_extreme,
-		WL128X_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_extreme);
 
 	COMPARE_N_ADD("FEM1_DegradedLowToNormalThr_5G", l, val,
-		&gp->degraded_low_to_normal_thr, 1);
+		&gp->degraded_low_to_normal_thr);
 
 	COMPARE_N_ADD("FEM1_NormalToDegradedHighThr_5G", l, val,
-		&gp->normal_to_degraded_high_thr, 1);
+		&gp->normal_to_degraded_high_thr);
 
 	COMPARE_N_ADD("FEM1_TxPerChannelPowerLimits_5G_OFDM", l, val,
-		gp->tx_per_chan_pwr_limits_ofdm,
-		WL1271_INI_CHANNEL_COUNT_5);
+		&gp->tx_per_chan_pwr_limits_ofdm);
 
 	COMPARE_N_ADD("FEM1_TxPDVsRateOffsets_5G", l, val,
-		gp->tx_pd_vs_rate_offsets,
-		WL128X_INI_RATE_GROUP_COUNT);
+		&gp->tx_pd_vs_rate_offsets);
 
 	COMPARE_N_ADD("FEM1_TxPDVsChannelOffsets_5G", l, val,
-		gp->tx_pd_vs_chan_offsets,
-		WL1271_INI_CHANNEL_COUNT_5);
+		&gp->tx_pd_vs_chan_offsets);
 
 	COMPARE_N_ADD("FEM1_TxPDVsTemperature_5G", l, val,
-		gp->tx_pd_vs_temperature,
-		WL1271_INI_SUB_BAND_COUNT_5 * WL128X_INI_PD_VS_TEMPERATURE_RANGES);
+		&gp->tx_pd_vs_temperature);
 
 	COMPARE_N_ADD("FEM1_TxIbiasTable_5G", l, val,
-		gp->tx_ibias,
-		WL128X_INI_RATE_GROUP_COUNT);
+		&gp->tx_ibias);
 
 	COMPARE_N_ADD("FEM1_RxFemInsertionLoss_5G", l, val,
-		gp->rx_fem_insertion_loss, WL1271_INI_SUB_BAND_COUNT_5);
+		&gp->rx_fem_insertion_loss);
 
 	fprintf(stderr, "Unable to parse: (%s)\n", l);
 
@@ -803,54 +781,46 @@ static int parse_fem0_band5_prms_128x(char *l, struct wl12xx_ini *p)
 		return 1;
 
 	COMPARE_N_ADD2("FEM0_TxBiPReferencePDvoltage_5G", l, val,
-		gp->tx_bip_ref_pd_voltage, WL1271_INI_SUB_BAND_COUNT_5);
+		&gp->tx_bip_ref_pd_voltage);
 
 	COMPARE_N_ADD("FEM0_TxBiPReferencePower_5G", l, val,
-		gp->tx_bip_ref_power, WL1271_INI_SUB_BAND_COUNT_5);
+		&gp->tx_bip_ref_power);
 
 	COMPARE_N_ADD("FEM0_TxBiPOffsetdB_5G", l, val,
-		gp->tx_bip_ref_offset, WL1271_INI_SUB_BAND_COUNT_5);
+		&gp->tx_bip_ref_offset);
 
 	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_5G_Normal", l, val,
-		gp->tx_per_rate_pwr_limits_normal,
-		WL128X_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_normal);
 
 	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_5G_Degraded", l, val,
-		gp->tx_per_rate_pwr_limits_degraded,
-		WL128X_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_degraded);
 
 	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_5G_Extreme", l, val,
-		gp->tx_per_rate_pwr_limits_extreme,
-		WL128X_INI_RATE_GROUP_COUNT);
+		&gp->tx_per_rate_pwr_limits_extreme);
 
 	COMPARE_N_ADD("FEM0_DegradedLowToNormalThr_5G", l, val,
-		&gp->degraded_low_to_normal_thr, 1);
+		&gp->degraded_low_to_normal_thr);
 
 	COMPARE_N_ADD("FEM0_NormalToDegradedHighThr_5G", l, val,
-		&gp->normal_to_degraded_high_thr, 1);
+		&gp->normal_to_degraded_high_thr);
 
 	COMPARE_N_ADD("FEM0_TxPerChannelPowerLimits_5G_OFDM", l, val,
-		gp->tx_per_chan_pwr_limits_ofdm,
-		WL1271_INI_CHANNEL_COUNT_5);
+		&gp->tx_per_chan_pwr_limits_ofdm);
 
 	COMPARE_N_ADD("FEM0_TxPDVsRateOffsets_5G", l, val,
-		gp->tx_pd_vs_rate_offsets,
-		WL128X_INI_RATE_GROUP_COUNT);
+		&gp->tx_pd_vs_rate_offsets);
 
 	COMPARE_N_ADD("FEM0_TxPDVsChannelOffsets_5G", l, val,
-		gp->tx_pd_vs_chan_offsets,
-		WL1271_INI_CHANNEL_COUNT_5);
+		&gp->tx_pd_vs_chan_offsets);
 
 	COMPARE_N_ADD("FEM0_TxPDVsTemperature_5G", l, val,
-		gp->tx_pd_vs_temperature,
-		WL1271_INI_SUB_BAND_COUNT_5 * WL128X_INI_PD_VS_TEMPERATURE_RANGES);
+		&gp->tx_pd_vs_temperature);
 
 	COMPARE_N_ADD("FEM0_TxIbiasTable_5G", l, val,
-		gp->tx_ibias,
-		WL128X_INI_RATE_GROUP_COUNT);
+		&gp->tx_ibias);
 
 	COMPARE_N_ADD("FEM0_RxFemInsertionLoss_5G", l, val,
-		gp->rx_fem_insertion_loss, WL1271_INI_SUB_BAND_COUNT_5);
+		&gp->rx_fem_insertion_loss);
 
 	fprintf(stderr, "Unable to parse: (%s)\n", l);
 
@@ -866,7 +836,7 @@ static int parse_fem_prms_128x(char *l, struct wl12xx_ini *p)
 		return 1;
 
 	COMPARE_N_ADD("FemVendorAndOptions", l, val,
-		&gp->fem_vendor_and_options, 1);
+		&gp->fem_vendor_and_options);
 
 	fprintf(stderr, "Unable to parse: (%s)\n", l);
 
