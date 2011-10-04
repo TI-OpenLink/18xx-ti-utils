@@ -180,55 +180,19 @@ static int set_ref_nvs(struct nl80211_state *state, struct nl_cb *cb,
 	argc -= 2;
 	argv += 2;
 
-	if (argc != 1)
+	if (argc < 1 || argc > 2)
 		return 1;
 
 	if (read_ini(*argv, &cmn)) {
 		fprintf(stderr, "Fail to read ini file\n");
 		return 1;
 	}
-
-	cfg_nvs_ops(&cmn);
-
-	cmn.nvs_name = NEW_NVS_NAME;
-	if (create_nvs_file(&cmn)) {
-		fprintf(stderr, "Fail to create reference NVS file\n");
-		return 1;
-	}
-
-	printf("%04X", cmn.arch);
-
-	return 0;
-}
-
-COMMAND(set, ref_nvs, "<ini file>", 0, 0, CIB_NONE, set_ref_nvs,
-	"Create reference NVS file");
-
-static int set_ref_nvs2(struct nl80211_state *state, struct nl_cb *cb,
-			struct nl_msg *msg, int argc, char **argv)
-{
-	struct wl12xx_common cmn = {
-		.arch = UNKNOWN_ARCH,
-		.parse_ops = NULL,
-		.dual_mode = DUAL_MODE_UNSET,
-	};
-
-	argc -= 2;
-	argv += 2;
-
-	if (argc != 2)
-		return 1;
-
-	if (read_ini(*argv, &cmn))
-		return 1;
-
 	argv++;
-	if (read_ini(*argv, &cmn))
-		return 1;
+	argc--;
 
 	cfg_nvs_ops(&cmn);
 
-	cmn.nvs_name = NEW_NVS_NAME;
+	cmn.nvs_name = get_opt_nvsoutfile(argc, argv);
 	if (create_nvs_file(&cmn)) {
 		fprintf(stderr, "Fail to create reference NVS file\n");
 		return 1;
@@ -239,8 +203,8 @@ static int set_ref_nvs2(struct nl80211_state *state, struct nl_cb *cb,
 	return 0;
 }
 
-COMMAND(set, ref_nvs2, "<ini file> <ini file>", 0, 0, CIB_NONE, set_ref_nvs2,
-	"Create reference NVS file for 2 FEMs");
+COMMAND(set, ref_nvs, "<ini file> [<nvs file>]", 0, 0, CIB_NONE, set_ref_nvs,
+	"Create reference NVS file");
 
 static int set_upd_nvs(struct nl80211_state *state, struct nl_cb *cb,
 	struct nl_msg *msg, int argc, char **argv)

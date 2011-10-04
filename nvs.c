@@ -37,7 +37,7 @@ static char* get_opt_file(int argc, char **argv, char *dir, char *def)
 		return NULL;
 	else if (argc == 0) {
 		name = def;
-		printf("The path to input %s file not provided, "
+		fprintf(stderr, "\nThe path to input %s file not provided, "
 		       "use default (%s)\n", dir, name);
 	}
 	else
