@@ -296,10 +296,6 @@ static int get_dump_nvs(struct nl80211_state *state, struct nl_cb *cb,
 			struct nl_msg *msg, int argc, char **argv)
 {
 	char *fname = NULL;
-	struct wl12xx_common cmn = {
-		.arch = UNKNOWN_ARCH,
-		.parse_ops = NULL
-	};
 
 	argc -= 2;
 	argv += 2;
@@ -308,7 +304,7 @@ static int get_dump_nvs(struct nl80211_state *state, struct nl_cb *cb,
 	if (!fname)
 		return 1;
 
-	if (dump_nvs_file(fname, &cmn)) {
+	if (dump_nvs_file(fname)) {
 		fprintf(stderr, "Fail to dump NVS file\n");
 		return 1;
 	}

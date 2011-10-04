@@ -934,7 +934,7 @@ static int find_section(const char *l, enum wl1271_ini_section *st, int *cntr,
 	return 1;
 }
 
-static int ini_parse_line(char *l, int nbr, struct wl12xx_common *cmn)
+static int ini_parse_line(char *l, struct wl12xx_common *cmn)
 {
 	static enum wl1271_ini_section status;
 	static int cntr;
@@ -1186,7 +1186,7 @@ int read_ini(const char *filename, struct wl12xx_common *cmn)
 
 	/* start parsing */
 	while (ini_get_line(buf, sizeof(buf), f, &line, &pos)) {
-		ret = ini_parse_line(pos, line, cmn);
+		ret = ini_parse_line(pos, cmn);
 		if (ret) break;
 	}
 

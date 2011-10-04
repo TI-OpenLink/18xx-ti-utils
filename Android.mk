@@ -12,7 +12,7 @@ LOCAL_SRC_FILES := \
 		plt.c \
 		ini.c
 
-LOCAL_CFLAGS :=
+LOCAL_CFLAGS := -Wall -Wno-unused-parameter
 LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH) \
 	external/libnl/include

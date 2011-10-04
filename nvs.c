@@ -761,7 +761,7 @@ out:
 	return res;
 }
 
-int dump_nvs_file(const char *nvs_file, struct wl12xx_common *cmn)
+int dump_nvs_file(const char *nvs_file)
 {
 	int sz=0, size;
 	char buf[2048];

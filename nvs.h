@@ -18,7 +18,7 @@ int create_nvs_file(struct wl12xx_common *cmn);
 int update_nvs_file(const char *nvs_infile, const char *nvs_outfile,
 	struct wl12xx_common *cmn);
 
-int dump_nvs_file(const char *nvs_file, struct wl12xx_common *cmn);
+int dump_nvs_file(const char *nvs_file);
 
 int set_nvs_file_autofem(const char *nvs_file, unsigned char val,
 	struct wl12xx_common *cmn);
