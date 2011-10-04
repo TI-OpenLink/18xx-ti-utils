@@ -9,6 +9,8 @@ char *get_opt_nvsoutfile(int argc, char **argv);
 
 int prepare_nvs_file(void *arg, char *file_name);
 
+int nvs_set_mac(char *nvsfile, char *mac);
+
 void cfg_nvs_ops(struct wl12xx_common *cmn);
 
 int create_nvs_file(struct wl12xx_common *cmn);

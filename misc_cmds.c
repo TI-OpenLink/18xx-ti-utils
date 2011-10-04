@@ -1,6 +1,5 @@
 #include <stdbool.h>
 #include <errno.h>
-#include <time.h>
 #include <net/if.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -156,53 +155,13 @@ COMMAND(get, nvs_mac, "[<nvs filename>]", 0, 0, CIB_NONE, get_nvs_mac,
 static int set_nvs_mac(struct nl80211_state *state, struct nl_cb *cb,
 			struct nl_msg *msg, int argc, char **argv)
 {
-	unsigned char mac_buff[12];
-	unsigned int in_mac[6];
-	int fd;
-
 	argc -= 2;
 	argv += 2;
 
 	if (argc < 1 || (argc == 2 && (strlen(argv[1]) != 17)))
 		return 2;
 
-	if (argc == 2)
-		sscanf(argv[1], "%2x:%2x:%2x:%2x:%2x:%2x",
-		&in_mac[0], &in_mac[1],
-		&in_mac[2], &in_mac[3],
-		&in_mac[4], &in_mac[5]);
-	else {
-		srand((unsigned)time(NULL));
-
-		in_mac[0] = 0x0;
-		in_mac[1] = rand();
-		in_mac[2] = rand();
-		in_mac[3] = rand();
-		in_mac[4] = rand();
-		in_mac[5] = rand();
-	}
-
-	fd = open(argv[0], O_RDWR);
-	if (fd < 0) {
-		perror("Error opening file for reading");
-		return 1;
-	}
-
-	read(fd, mac_buff, 12);
-
-	mac_buff[11] = in_mac[0];
-	mac_buff[10] = in_mac[1];
-	mac_buff[6]  = in_mac[2];
-	mac_buff[5]  = in_mac[3];
-	mac_buff[4]  = in_mac[4];
-	mac_buff[3]  = in_mac[5];
-
-	lseek(fd, 0L, 0);
-
-	write(fd, mac_buff, 12);
-
-	close(fd);
-
+	nvs_set_mac(argv[0], argv[1]);
 	return 0;
 }
 
@@ -232,6 +191,7 @@ static int set_ref_nvs(struct nl80211_state *state, struct nl_cb *cb,
 
 	cfg_nvs_ops(&cmn);
 
+	cmn.nvs_name = NEW_NVS_NAME;
 	if (create_nvs_file(&cmn)) {
 		fprintf(stderr, "Fail to create reference NVS file\n");
 		return 1;
@@ -270,6 +230,7 @@ static int set_ref_nvs2(struct nl80211_state *state, struct nl_cb *cb,
 
 	cfg_nvs_ops(&cmn);
 
+	cmn.nvs_name = NEW_NVS_NAME;
 	if (create_nvs_file(&cmn)) {
 		fprintf(stderr, "Fail to create reference NVS file\n");
 		return 1;

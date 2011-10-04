@@ -301,6 +301,7 @@ struct wl12xx_common {
 	struct wl12xx_parse_ops *parse_ops;
 	struct wl12xx_nvs_ops   *nvs_ops;
 	struct wl12xx_ini ini;
+	char *nvs_name;
 };
 
 struct wl12xx_parse_ops {
@@ -312,6 +313,7 @@ struct wl12xx_parse_ops {
 	int (*prs_fem0_band2_prms)(char *l, struct wl12xx_ini *p);
 	int (*prs_fem1_band2_prms)(char *l, struct wl12xx_ini *p);
 	int (*prs_fem1_band5_prms)(char *l, struct wl12xx_ini *p);
+	int (*is_dual_mode)(struct wl12xx_ini *p);
 };
 
 struct wl12xx_nvs_ops {
@@ -324,4 +326,5 @@ int nvs_get_arch(int file_size, struct wl12xx_common *cmn);
 
 int read_ini(const char *filename, struct wl12xx_common *cmn);
 
+int ini_get_dual_mode(struct wl12xx_common *cmn);
 #endif

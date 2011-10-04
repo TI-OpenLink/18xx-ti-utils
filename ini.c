@@ -950,6 +950,20 @@ static void ini_dump(struct wl1271_ini *ini)
 }
 #endif
 
+
+static int is_dual_mode(struct wl12xx_ini *p)
+{
+	struct wl1271_ini_general_params *gp = &(p->ini1271.general_params);
+	return gp->dual_mode_select;
+}
+
+static int is_dual_mode_128x(struct wl12xx_ini *p)
+{
+	struct wl128x_ini_general_params *gp = &(p->ini128x.general_params);
+	return gp->dual_mode_select;
+}
+
+
 static struct wl12xx_parse_ops wl1271_parse_ops = {
 	.prs_general_prms       = parse_general_prms,
 	.prs_band2_prms         = parse_band2_prms,
@@ -957,6 +971,7 @@ static struct wl12xx_parse_ops wl1271_parse_ops = {
 	.prs_fem0_band2_prms    = parse_fem0_band2_prms,
 	.prs_fem1_band2_prms    = parse_fem1_band2_prms,
 	.prs_fem1_band5_prms    = parse_fem1_band5_prms,
+	.is_dual_mode		= is_dual_mode,
 };
 
 static struct wl12xx_parse_ops wl128x_parse_ops = {
@@ -966,7 +981,13 @@ static struct wl12xx_parse_ops wl128x_parse_ops = {
 	.prs_fem0_band2_prms    = parse_fem0_band2_prms_128x,
 	.prs_fem1_band2_prms    = parse_fem1_band2_prms_128x,
 	.prs_fem1_band5_prms    = parse_fem1_band5_prms_128x,
+	.is_dual_mode		= is_dual_mode_128x,
 };
+
+int ini_get_dual_mode(struct wl12xx_common *cmn)
+{
+	return cmn->parse_ops->is_dual_mode(&cmn->ini);
+}
 
 int nvs_get_arch(int file_size, struct wl12xx_common *cmn)
 {

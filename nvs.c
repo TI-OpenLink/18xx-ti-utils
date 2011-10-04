@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <netinet/in.h>
+#include <time.h>
 
 #include <netlink/netlink.h>
 #include <netlink/msg.h>
@@ -60,6 +61,60 @@ char *get_opt_nvsoutfile(int argc, char **argv)
 	char *name = get_opt_file(argc, argv, "output", NEW_NVS_NAME);
 	return name;
 }
+
+int nvs_set_mac(char *nvsfile, char *mac)
+{
+	unsigned char mac_buff[12];
+	unsigned char in_mac[6];
+	int fd;
+
+	if (mac) {
+		int ret =
+		sscanf(mac, "%2x:%2x:%2x:%2x:%2x:%2x",
+		(unsigned int *)&in_mac[0], (unsigned int *)&in_mac[1],
+		(unsigned int *)&in_mac[2], (unsigned int *)&in_mac[3],
+		(unsigned int *)&in_mac[4], (unsigned int *)&in_mac[5]);
+		if (ret != 6) {
+			fprintf(stderr, "MAC address is not valid: %s\n", mac);
+			return -1;
+		}
+	}
+	else {
+		srand((unsigned)time(NULL));
+
+		in_mac[0] = 0x0;
+		in_mac[1] = rand()%256;
+		in_mac[2] = rand()%256;
+		in_mac[3] = rand()%256;
+		in_mac[4] = rand()%256;
+		in_mac[5] = rand()%256;
+		fprintf(stderr, "WARNING: No MAC specified. Using random MAC!");
+	}
+
+	fd = open(nvsfile, O_RDWR);
+	if (fd < 0) {
+		perror("Error opening file for reading");
+		return 1;
+	}
+
+	read(fd, mac_buff, 12);
+	mac_buff[11] = in_mac[0];
+	mac_buff[10] = in_mac[1];
+	mac_buff[6]  = in_mac[2];
+	mac_buff[5]  = in_mac[3];
+	mac_buff[4]  = in_mac[4];
+	mac_buff[3]  = in_mac[5];
+
+	lseek(fd, 0L, 0);
+
+	printf("Writing mac address %s to file %s\n", mac, nvsfile);
+	write(fd, mac_buff, 12);
+
+	close(fd);
+	return 0;
+}
+
+
 
 int nvs_fill_radio_params(int fd, struct wl12xx_ini *ini, char *buf)
 {
@@ -248,8 +303,6 @@ int file_exist(const char *filename)
 
 	ret = stat(filename, &buf);
 	if (ret != 0) {
-		fprintf(stderr, "fail to stat file %s (%s)\n", filename,
-			strerror(errno));
 		return -1;
 	}
 
@@ -545,7 +598,7 @@ int prepare_nvs_file(void *arg, char *file_name)
 	cfg_nvs_ops(&cmn);
 
 	/* create new NVS file */
-	new_nvs = open(NEW_NVS_NAME,
+	new_nvs = open(file_name,
 		O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 	if (new_nvs < 0) {
 		fprintf(stderr, "%s> Unable to open new NVS file\n", __func__);
@@ -644,7 +697,7 @@ int create_nvs_file(struct wl12xx_common *cmn)
 	char buf[2048];
 
 	/* create new NVS file */
-	new_nvs = open(NEW_NVS_NAME,
+	new_nvs = open(cmn->nvs_name,
 		O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 	if (new_nvs < 0) {
 		fprintf(stderr, "%s> Unable to open new NVS file\n", __func__);

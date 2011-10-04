@@ -34,6 +34,50 @@
 
 SECTION(plt);
 
+#define CMDBUF_SIZE 200
+static int insmod(char *filename)
+{
+	int ret;
+	char cmd[CMDBUF_SIZE];
+	snprintf(cmd, CMDBUF_SIZE, "%s %s", INSMOD_PATH, filename);
+	ret = system(cmd);
+	if (ret)
+		fprintf(stderr, "Failed to load kernel module using command %s\n", cmd);
+	return ret;
+}
+
+static int rmmod(char *name)
+{
+	char cmd[CMDBUF_SIZE];
+	char *tmp = strdup(name);
+	int i, ret;
+
+	/* "basename" */
+	tmp = strrchr(name, '/');
+	if (!tmp)
+		tmp = name;
+	else
+		tmp++;
+
+	tmp = strdup(tmp);
+	if (!tmp)
+		return -ENOMEM;
+
+	/* strip trailing .ko if there */
+	i = strlen(tmp);
+	if (i < 4)
+		return -EINVAL;
+	if (!strcmp(tmp + i - 3, ".ko"))
+		tmp[i-3] = 0;
+
+	snprintf(cmd, CMDBUF_SIZE, "%s %s", RMMOD_PATH, tmp);
+	ret = system(cmd);
+	if (ret)
+		fprintf(stderr, "Failed to remove kernel module using command %s\n", cmd);
+	free(tmp);
+	return ret;
+}
+
 static void str2mac(unsigned char *pmac, char *pch)
 {
 	int i;
@@ -203,6 +247,7 @@ static int calib_valid_handler(struct nl_msg *msg, void *arg)
 		}
 		printf("++++++++++++++++++++++++\n");
 #endif
+	printf("Writing calibration data to %s\n", (char*) arg);
 	if (prepare_nvs_file(prms, arg)) {
 		fprintf(stderr, "Fail to prepare calibrated NVS file\n");
 		return 2;
@@ -779,22 +824,17 @@ fail_out:
 COMMAND(plt, rx_statistics, NULL, 0, 0, CIB_NONE, plt_rx_statistics,
 	"Get Rx statistics\n");
 
-static int plt_calibrate(struct nl80211_state *state, struct nl_cb *cb,
-			struct nl_msg *msg, int argc, char **argv)
+static int plt_do_calibrate(struct nl80211_state *state, struct nl_cb *cb,
+			struct nl_msg *msg, int single_dual, char *nvs_file,
+			char *devname)
 {
 	int ret = 0, err;
-	int single_dual = 0;
-
-	if (argc > 2 && (strncmp(argv[2], "dual", 4) ==  0))
-		single_dual = 1;	/* going for dual band calibration */
-	else
-		single_dual = 0;	/* going for single band calibration */
 
 	/* power mode on */
 	{
-		char *pm_on[4] = { "wlan0", "plt", "power_mode", "on" };
+		char *pm_on[4] = { devname, "plt", "power_mode", "on" };
 
-		err = handle_cmd(state, II_NETDEV, 4, pm_on);
+		err = handle_cmd(state, II_NETDEV, ARRAY_SIZE(pm_on), pm_on);
 		if (err < 0) {
 			fprintf(stderr, "Fail to set PLT power mode on\n");
 			ret = err;
@@ -804,11 +844,11 @@ static int plt_calibrate(struct nl80211_state *state, struct nl_cb *cb,
 
 	/* tune channel */
 	{
-		char *pm_on[5] = {
-			"wlan0", "plt", "tune_channel", "0", "7"
+		char *tune[5] = {
+			devname, "plt", "tune_channel", "0", "7"
 		};
 
-		err = handle_cmd(state, II_NETDEV, 5, pm_on);
+		err = handle_cmd(state, II_NETDEV, ARRAY_SIZE(tune), tune);
 		if (err < 0) {
 			fprintf(stderr, "Fail to tune channel\n");
 			ret = err;
@@ -818,10 +858,11 @@ static int plt_calibrate(struct nl80211_state *state, struct nl_cb *cb,
 
 	/* calibrate it */
 	{
-		char *prms[11] = {
-			"wlan0", "plt", "tx_bip", "1", "0", "0", "0",
-			"0", "0", "0", "0"
+		char *prms[12] = {
+			devname, "plt", "tx_bip", "1", "0", "0", "0",
+			"0", "0", "0", "0", nvs_file
 		};
+		printf("Calibrate %s\n", nvs_file);
 
 		/* set flags in case of dual band */
 		if (single_dual) {
@@ -829,9 +870,9 @@ static int plt_calibrate(struct nl80211_state *state, struct nl_cb *cb,
 				prms[9] = prms[10] = "1";
 		}
 
-		err = handle_cmd(state, II_NETDEV, 11, prms);
+		err = handle_cmd(state, II_NETDEV, ARRAY_SIZE(prms), prms);
 		if (err < 0) {
-			fprintf(stderr, "Fail to calibrate\n");
+			fprintf(stderr, "Failed to calibrate\n");
 			ret = err;
 		}
 	}
@@ -839,11 +880,11 @@ static int plt_calibrate(struct nl80211_state *state, struct nl_cb *cb,
 fail_out:
 	/* power mode off */
 	{
-		char *prms[4] = { "wlan0", "plt", "power_mode", "off"};
+		char *prms[4] = { devname, "plt", "power_mode", "off"};
 
-		err = handle_cmd(state, II_NETDEV, 4, prms);
+		err = handle_cmd(state, II_NETDEV, ARRAY_SIZE(prms), prms);
 		if (err < 0) {
-			fprintf(stderr, "Fail to set PLT power mode on\n");
+			fprintf(stderr, "Failed to set PLT power mode on\n");
 			ret = err;
 		}
 	}
@@ -855,5 +896,109 @@ fail_out_final:
 	return 0;
 }
 
+static int plt_calibrate(struct nl80211_state *state, struct nl_cb *cb,
+			struct nl_msg *msg, int argc, char **argv)
+{
+	int single_dual = 0;
+
+	if (argc > 2 && (strncmp(argv[2], "dual", 4) ==  0))
+		single_dual = 1;	/* going for dual band calibration */
+	else
+		single_dual = 0;	/* going for single band calibration */
+
+	return plt_do_calibrate(state, cb, msg, single_dual, NEW_NVS_NAME,
+	                        "wlan0");
+}
+
 COMMAND(plt, calibrate, "[<single|dual>]", 0, 0, CIB_NONE,
 	plt_calibrate, "Do calibrate for single or dual band chip\n");
+
+
+static int plt_autocalibrate(struct nl80211_state *state, struct nl_cb *cb,
+			struct nl_msg *msg, int argc, char **argv)
+{
+	struct wl12xx_common cmn = {
+		.arch = UNKNOWN_ARCH,
+		.parse_ops = NULL,
+		.dual_mode = DUAL_MODE_UNSET,
+		.done_fem = NO_FEM_PARSED
+	};
+
+	char *devname, *modpath, *inifile1, *macaddr;
+	int single_dual = 0, res;
+
+	argc -= 2;
+	argv += 2;
+
+	if (argc != 5) {
+		return 1;
+	}
+
+	devname = *argv++;
+	argc--;
+
+	modpath = *argv++;
+	argc--;
+
+	inifile1 = *argv++;
+	argc--;
+
+	cmn.nvs_name = get_opt_nvsoutfile(argc--, argv++);
+	macaddr = *argv++;
+	argc--;
+
+	if (file_exist(cmn.nvs_name) >= 0) {
+		fprintf(stderr, "nvs file %s. File already exists. Won't overwrite.\n", cmn.nvs_name);
+		return 0;
+	}
+
+	/* Create ref nvs */
+	if (read_ini(inifile1, &cmn)) {
+		fprintf(stderr, "Failed to read ini file %s\n", inifile1);
+		goto out_removenvs;
+	}
+
+	/* Get nr bands from parsed ini */
+	single_dual = ini_get_dual_mode(&cmn);
+
+	cfg_nvs_ops(&cmn);
+
+	if (create_nvs_file(&cmn)) {
+		fprintf(stderr, "Failed to create reference NVS file\n");
+		return 1;
+	}
+
+	/* Load module */
+	res = insmod(modpath);
+	if (res) {
+		goto out_removenvs;
+	}
+
+	res = plt_do_calibrate(state, cb, msg, single_dual,
+	                      cmn.nvs_name, devname);
+	if (res) {
+		goto out_rmmod;
+	}
+
+	res = nvs_set_mac(cmn.nvs_name, macaddr);
+	if (res) {
+		goto out_rmmod;
+	}
+
+	rmmod(modpath);
+	printf("Calibration done for 1 FEM in %s band. Resulting nvs is %s\n",
+	       single_dual ? "dual" : "single",
+	       cmn.nvs_name);
+	return 0;
+
+out_rmmod:
+	rmmod(modpath);
+
+out_removenvs:
+	fprintf(stderr, "Calibration not complete. Removing half-baked nvs\n");
+	unlink(cmn.nvs_name);
+	return 0;
+
+}
+COMMAND(plt, autocalibrate, "<dev> <module path> <ini file1> <nvs file> <mac addr> ", 0, 0, CIB_NONE,
+	plt_autocalibrate, "Do automatic calibration\n");
