@@ -918,14 +918,14 @@ static int plt_autocalibrate(struct nl80211_state *state, struct nl_cb *cb,
 			struct nl_msg *msg, int argc, char **argv)
 {
 	struct wl12xx_common cmn = {
+		.auto_fem = 0,
 		.arch = UNKNOWN_ARCH,
 		.parse_ops = NULL,
 		.dual_mode = DUAL_MODE_UNSET,
-		.done_fem = NO_FEM_PARSED
 	};
 
 	char *devname, *modpath, *inifile1, *macaddr;
-	int single_dual = 0, res;
+	int single_dual = 0, res, fems_parsed;
 
 	argc -= 2;
 	argv += 2;
@@ -958,8 +958,37 @@ static int plt_autocalibrate(struct nl80211_state *state, struct nl_cb *cb,
 		goto out_removenvs;
 	}
 
+	fems_parsed = cmn.fem0_bands + cmn.fem1_bands;
+
 	/* Get nr bands from parsed ini */
 	single_dual = ini_get_dual_mode(&cmn);
+
+	if (single_dual == 0) {
+		if (fems_parsed < 1 || fems_parsed > 2) {
+			fprintf(stderr, "Incorrect number of FEM sections %d for single mode\n",
+			        fems_parsed);
+			return 1;
+		}
+	}
+	else if (single_dual == 1) {
+		if (fems_parsed < 2 && fems_parsed > 4) {
+			fprintf(stderr, "Incorrect number of FEM sections %d for dual mode\n",
+			        fems_parsed);
+			return 1;
+		}
+	}
+	else {
+		fprintf(stderr, "Invalid value for TXBiPFEMAutoDetect %d",
+		        single_dual);
+		return 1;
+	}
+
+	/* I suppose you can have one FEM with 2.4 only and one in dual band
+	   but it's more likely a mistake */
+	if ((single_dual + 1) * 2 != fems_parsed) {
+		printf("WARNING: %d FEMS for %d bands looks like a strange configuration\n",
+		       fems_parsed, single_dual + 1);
+	}
 
 	cfg_nvs_ops(&cmn);
 
@@ -986,8 +1015,18 @@ static int plt_autocalibrate(struct nl80211_state *state, struct nl_cb *cb,
 	}
 
 	rmmod(modpath);
-	printf("Calibration done for 1 FEM in %s band. Resulting nvs is %s\n",
-	       single_dual ? "dual" : "single",
+
+	printf("Calibration done. ");
+	if (cmn.fem0_bands) {
+		printf("FEM0 has %d bands. ", cmn.fem0_bands);
+	}
+	if (cmn.fem1_bands) {
+		printf("FEM1 has %d bands. ", cmn.fem1_bands);
+	}
+
+	printf("AutoFEM is %s. ", cmn.auto_fem ? "on" : "off");
+
+	printf("Resulting nvs is %s\n",
 	       cmn.nvs_name);
 	return 0;
 

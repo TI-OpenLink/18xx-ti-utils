@@ -175,7 +175,6 @@ static int set_ref_nvs(struct nl80211_state *state, struct nl_cb *cb,
 		.arch = UNKNOWN_ARCH,
 		.parse_ops = NULL,
 		.dual_mode = DUAL_MODE_UNSET,
-		.done_fem = NO_FEM_PARSED
 	};
 
 	argc -= 2;
@@ -212,7 +211,6 @@ static int set_ref_nvs2(struct nl80211_state *state, struct nl_cb *cb,
 		.arch = UNKNOWN_ARCH,
 		.parse_ops = NULL,
 		.dual_mode = DUAL_MODE_UNSET,
-		.done_fem = NO_FEM_PARSED
 	};
 
 	argc -= 2;

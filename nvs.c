@@ -1157,8 +1157,11 @@ int info_nvs_file(const char *nvs_file)
 		for (i = 0; i < femcnt; i++) {
 			print_127x_fem_param2(i, &nvs->dyn_radio_params_2[i].params);
 			printf("\n");
-			print_127x_fem_param5(femi, &nvs->dyn_radio_params_5[i].params);
-			printf("\n");
+
+			if (nvs->general_params.dual_mode_select == 1) {
+				print_127x_fem_param5(femi, &nvs->dyn_radio_params_5[i].params);
+				printf("\n");
+			}
 			femi++;
 		}
 	}
@@ -1181,8 +1184,10 @@ int info_nvs_file(const char *nvs_file)
 		for (i = 0; i < femcnt; i++) {
 			print_128x_fem_param2(femi, &nvs->dyn_radio_params_2[femi].params);
 			printf("\n");
-			print_128x_fem_param5(femi, &nvs->dyn_radio_params_5[femi].params);
-			printf("\n");
+			if (nvs->general_params.dual_mode_select == 1) {
+				print_128x_fem_param5(femi, &nvs->dyn_radio_params_5[femi].params);
+				printf("\n");
+			}
 			femi++;
 		}
 	}
