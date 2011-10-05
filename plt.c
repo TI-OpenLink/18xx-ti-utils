@@ -340,30 +340,22 @@ static int get_chip_arch(char *dev_name, enum wl12xx_arch *arch)
 	return 0;
 }
 
-static int plt_nvs_ver(struct nl80211_state *state, struct nl_cb *cb,
-			struct nl_msg *msg, int argc, char **argv)
+static int do_nvs_ver21(struct nl_msg *msg, enum wl12xx_arch arch)
 {
 	struct nlattr *key;
 	struct wl1271_cmd_set_nvs_ver prms;
-	enum wl12xx_arch arch = UNKNOWN_ARCH;
-	int ret;
-
-	if (argc < 1) {
-		fprintf(stderr, "Missing device name\n");
-		return 2;
-	}
-
-	ret = get_chip_arch(argv[0], &arch);
-	if (ret || (arch == UNKNOWN_ARCH)) {
-		fprintf(stderr, "Unknown chip arch\n");
-		return 2;
-	}
 
 	memset(&prms, 0, sizeof(struct wl1271_cmd_set_nvs_ver));
+
 	if (arch == WL1271_ARCH)
 		prms.test.id = TEST_CMD_SET_NVS_VERSION;
-	else
+	else if(arch == WL128X_ARCH)
 		prms.test.id = TEST_CMD_SET_NVS_VERSION - 1;
+	else {
+		fprintf(stderr, "Unkown arch %x\n", arch);
+		return 1;
+	}
+
 	prms.nvs_ver = NVS_VERSION_2_1;
 
 	key = nla_nest_start(msg, NL80211_ATTR_TESTDATA);
@@ -384,8 +376,54 @@ nla_put_failure:
 	return 2;
 }
 
+
+static int plt_nvs_ver(struct nl80211_state *state, struct nl_cb *cb,
+			struct nl_msg *msg, int argc, char **argv)
+{
+	enum wl12xx_arch arch = UNKNOWN_ARCH;
+	int ret;
+
+	if (argc < 1) {
+		fprintf(stderr, "Missing device name\n");
+		return 2;
+	}
+
+	ret = get_chip_arch(argv[0], &arch);
+	if (ret || (arch == UNKNOWN_ARCH)) {
+		fprintf(stderr, "Unknown chip arch\n");
+		return 2;
+	}
+
+	return do_nvs_ver21(msg, arch);
+}
+
 COMMAND(plt, nvs_ver, "<device name>",
 	NL80211_CMD_TESTMODE, 0, CIB_PHY, plt_nvs_ver,
+	"Set NVS version\n");
+
+
+static int plt_nvs_ver2(struct nl80211_state *state, struct nl_cb *cb,
+			struct nl_msg *msg, int argc, char **argv)
+{
+	enum wl12xx_arch arch = UNKNOWN_ARCH;
+	int ret;
+
+	if (argc < 1) {
+		fprintf(stderr, "Missing device name\n");
+		return 2;
+	}
+
+	ret = sscanf(argv[0], "%x", &arch);
+	if(ret != 1) {
+		fprintf(stderr, "Unknown chip arch\n");
+		return 2;
+	}
+
+	return do_nvs_ver21(msg, arch);
+}
+
+COMMAND(plt, nvs_ver, "<arch>",
+	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_nvs_ver2,
 	"Set NVS version\n");
 
 static int plt_tx_bip(struct nl80211_state *state, struct nl_cb *cb,
@@ -826,7 +864,7 @@ COMMAND(plt, rx_statistics, NULL, 0, 0, CIB_NONE, plt_rx_statistics,
 
 static int plt_do_calibrate(struct nl80211_state *state, struct nl_cb *cb,
 			struct nl_msg *msg, int single_dual, char *nvs_file,
-			char *devname)
+			char *devname, enum wl12xx_arch arch)
 {
 	int ret = 0, err;
 
@@ -853,6 +891,31 @@ static int plt_do_calibrate(struct nl80211_state *state, struct nl_cb *cb,
 			fprintf(stderr, "Fail to tune channel\n");
 			ret = err;
 			goto fail_out;
+		}
+	}
+
+	/* Set nvs version 2.1 */
+	if (arch == UNKNOWN_ARCH) {
+		fprintf(stderr, "Unknown arch. Not setting nvs ver 2.1");
+	}
+	else {
+		size_t ret;
+		char archstr[5] = "";
+		char *prms[4] = {
+			"wlan0", "plt", "nvs_ver", archstr
+		};
+
+		ret = snprintf(archstr, sizeof(archstr), "%x", arch);
+		if (ret > sizeof(archstr)) {
+			fprintf(stderr, "Bad arch\n");
+			goto fail_out;
+		}
+
+		printf("Using nvs version 2.1\n");
+		err = handle_cmd(state, II_NETDEV, 4, prms);
+		if (err < 0) {
+			fprintf(stderr, "Fail to set nvs ver 2.1\n");
+			ret = err;
 		}
 	}
 
@@ -907,7 +970,7 @@ static int plt_calibrate(struct nl80211_state *state, struct nl_cb *cb,
 		single_dual = 0;	/* going for single band calibration */
 
 	return plt_do_calibrate(state, cb, msg, single_dual, NEW_NVS_NAME,
-	                        "wlan0");
+	                        "wlan0", UNKNOWN_ARCH);
 }
 
 COMMAND(plt, calibrate, "[<single|dual>]", 0, 0, CIB_NONE,
@@ -1004,7 +1067,7 @@ static int plt_autocalibrate(struct nl80211_state *state, struct nl_cb *cb,
 	}
 
 	res = plt_do_calibrate(state, cb, msg, single_dual,
-	                      cmn.nvs_name, devname);
+	                      cmn.nvs_name, devname, cmn.arch);
 	if (res) {
 		goto out_rmmod;
 	}
