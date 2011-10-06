@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/data/busybox/sh
 
 # PLT utility for TI's wireless driver wl12xx
 #
