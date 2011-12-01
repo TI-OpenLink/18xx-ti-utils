@@ -1123,7 +1123,7 @@ int get_fem_nr(int autodetect, int manuf, int *femcnt, int *femi)
 int info_nvs_file(const char *nvs_file)
 {
 	char buf[BUF_SIZE_4_NVS_FILE];
-	int ret, i, femi, femcnt;
+	int ret, i, femi, femcnt, maxfem;
 
 	int fd =  open(nvs_file, O_RDONLY, S_IRUSR | S_IWUSR);
 	if (fd < 0) {
@@ -1153,8 +1153,8 @@ int info_nvs_file(const char *nvs_file)
 		               &femcnt, &femi))
 			return 1;
 
-
-		for (i = 0; i < femcnt; i++) {
+		maxfem = femcnt + femi;
+		for (i = femi; i < maxfem; i++) {
 			print_127x_fem_param2(i, &nvs->dyn_radio_params_2[i].params);
 			printf("\n");
 
@@ -1181,7 +1181,8 @@ int info_nvs_file(const char *nvs_file)
 		               &femcnt, &femi))
 			return 1;
 
-		for (i = 0; i < femcnt; i++) {
+		maxfem = femcnt + femi;
+		for (i = femi; i < maxfem; i++) {
 			print_128x_fem_param2(femi, &nvs->dyn_radio_params_2[femi].params);
 			printf("\n");
 			if (nvs->general_params.dual_mode_select == 1) {
