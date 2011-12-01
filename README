@@ -176,12 +176,6 @@ destination directory (usually /lib/firmware).
 
 calibrator get nvs_mac [<nvs filename>]
 
-
-	Push local NVS to the system:
-
-calibrator phy <phyname> set push_nvs <nvs filename>
-
-
 	Set NVS to use auto FEM detection 
 
 calibrator set autofem 1
