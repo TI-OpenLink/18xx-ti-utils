@@ -1048,9 +1048,11 @@ static int plt_autocalibrate(struct nl80211_state *state, struct nl_cb *cb,
 
 	/* I suppose you can have one FEM with 2.4 only and one in dual band
 	   but it's more likely a mistake */
-	if ((single_dual + 1) * 2 != fems_parsed) {
-		printf("WARNING: %d FEMS for %d bands looks like a strange configuration\n",
-		       fems_parsed, single_dual + 1);
+	if ((single_dual + 1) * (cmn.auto_fem + 1) != fems_parsed) {
+		printf("WARNING: %d FEMS for %d bands with autofem %s looks "
+			"like a strange configuration\n",
+			fems_parsed, single_dual + 1,
+			cmn.auto_fem ? "on" : "off");
 	}
 
 	cfg_nvs_ops(&cmn);
