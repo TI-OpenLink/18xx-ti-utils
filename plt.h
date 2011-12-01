@@ -221,8 +221,11 @@ struct wl1271_cmd_cal_tx_tone {
 
 	struct wl1271_cmd_test_header test;
 
-	__le32 tone_type;
+	__le16 radio_status;
+	unsigned char padding[2];
 	__le32 power;
+	unsigned char tone_type;
+	unsigned char unused[11];
 } __attribute__((packed));
 
 #define NVS_VERSION_2		2
