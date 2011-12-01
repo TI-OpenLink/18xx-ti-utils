@@ -552,7 +552,7 @@ static int plt_tx_cont(struct nl80211_state *state, struct nl_cb *cb,
 
 	prms.test.id = TEST_CMD_FCC;
 	prms.delay = atoi(argv[0]);
-	prms.rate = atoi(argv[1]);
+	prms.rate = strtol(argv[1], NULL, 0);
 	prms.size = (unsigned short)atoi(argv[2]);
 	prms.amount = (unsigned short)atoi(argv[3]);
 	prms.power = atoi(argv[4]);
