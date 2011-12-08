@@ -31,7 +31,14 @@ LOCAL_SRC_FILES := scripts/$(LOCAL_MODULE)
 include $(BUILD_PREBUILT)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := ProjectLogDef.ili
+LOCAL_MODULE := wl128x-fw-mr.ili.r4
+LOCAL_MODULE_TAGS := eng
+LOCAL_MODULE_CLASS := ETC
+LOCAL_SRC_FILES := fw_logger/$(LOCAL_MODULE)
+include $(BUILD_PREBUILT)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := wl128x-fw-mr.ili.r5
 LOCAL_MODULE_TAGS := eng
 LOCAL_MODULE_CLASS := ETC
 LOCAL_SRC_FILES := fw_logger/$(LOCAL_MODULE)

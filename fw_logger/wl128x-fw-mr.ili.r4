@@ -2,7 +2,7 @@
 Version=1
 
 [FileID]
--1=M:\IsriZ_Merge94_MCP3_None_MR_FW_1\victoria\firmware\real_time_trace_string.h
+-1=M:\IsriZ_MCP3_None_MR_FW_1_int\victoria\firmware\real_time_trace_string.h
 
 [MsgID]
 1=%d UART Traces Dropped
