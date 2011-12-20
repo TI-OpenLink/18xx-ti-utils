@@ -31,9 +31,10 @@ class IliParser(object):
 				msgid, msg = re.findall("^(\d+)=(.*)", line)[0]
 				self.msgids[int(msgid)] = msg
 			elif mode == MODE_STRINGTABLE:
-				msgid, param_number, string_tuple = re.findall("^Str(\d+).(\d+)=(.*)", line)[0]
-				li = self.strings_dict.setdefault((int(msgid), int(param_number)), [])
-				li.append(string_tuple.split(','))
+				if line.startswith('Str'):
+					msgid, param_number, string_tuple = re.findall("^Str(\d+).(\d+)=(.*)", line)[0]
+					li = self.strings_dict.setdefault((int(msgid), int(param_number)), [])
+					li.append(string_tuple.split(','))
 
 	def format_msg(self, msgid, params):
 		try:
