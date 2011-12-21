@@ -58,6 +58,8 @@ LOCAL_MODULE_CLASS := ETC
 LOCAL_SRC_FILES := fw_logger/$(LOCAL_MODULE)
 include $(BUILD_PREBUILT)
 
+include $(LOCAL_PATH)/ini_files/Android.mk
+
 #
 # UIM Application
 #
