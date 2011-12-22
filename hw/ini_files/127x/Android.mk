@@ -1,5 +1,3 @@
-ifeq ($(BOARD_WLAN_DEVICE),wl12xx_mac80211)
-
 LOCAL_PATH := $(call my-dir)
 local_target_dir := $(TARGET_OUT)/etc/wifi/ini_files
 INI_FILE_PREFIX := 127x
@@ -59,5 +57,3 @@ LOCAL_MODULE_CLASS := ETC
 LOCAL_MODULE_PATH := $(local_target_dir)
 LOCAL_MODULE := $(INI_FILE_PREFIX)_$(LOCAL_SRC_FILES)
 include $(BUILD_PREBUILT)
-
-endif

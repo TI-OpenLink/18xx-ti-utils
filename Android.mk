@@ -23,42 +23,7 @@ LOCAL_MODULE := calibrator
 
 include $(BUILD_EXECUTABLE)
 
-include $(CLEAR_VARS)
-LOCAL_MODULE := wl128x-fw-mr.ili.r4
-LOCAL_MODULE_TAGS := eng
-LOCAL_MODULE_CLASS := ETC
-LOCAL_SRC_FILES := fw_logger/$(LOCAL_MODULE)
-include $(BUILD_PREBUILT)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := wl128x-fw-mr.ili.r5
-LOCAL_MODULE_TAGS := eng
-LOCAL_MODULE_CLASS := ETC
-LOCAL_SRC_FILES := fw_logger/$(LOCAL_MODULE)
-include $(BUILD_PREBUILT)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := iliparser.py
-LOCAL_MODULE_TAGS := eng
-LOCAL_MODULE_CLASS := ETC
-LOCAL_SRC_FILES := fw_logger/$(LOCAL_MODULE)
-include $(BUILD_PREBUILT)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := message.py
-LOCAL_MODULE_TAGS := eng
-LOCAL_MODULE_CLASS := ETC
-LOCAL_SRC_FILES := fw_logger/$(LOCAL_MODULE)
-include $(BUILD_PREBUILT)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := parser.py
-LOCAL_MODULE_TAGS := eng
-LOCAL_MODULE_CLASS := ETC
-LOCAL_SRC_FILES := fw_logger/$(LOCAL_MODULE)
-include $(BUILD_PREBUILT)
-
-include $(LOCAL_PATH)/ini_files/Android.mk
+include $(LOCAL_PATH)/hw/Android.mk
 
 #
 # UIM Application
