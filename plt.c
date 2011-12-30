@@ -49,7 +49,7 @@ static int insmod(char *filename)
 static int rmmod(char *name)
 {
 	char cmd[CMDBUF_SIZE];
-	char *tmp = strdup(name);
+	char *tmp;
 	int i, ret;
 
 	/* "basename" */
@@ -65,8 +65,10 @@ static int rmmod(char *name)
 
 	/* strip trailing .ko if there */
 	i = strlen(tmp);
-	if (i < 4)
-		return -EINVAL;
+	if (i < 4) {
+		ret = -EINVAL;
+		goto out;
+	}
 	if (!strcmp(tmp + i - 3, ".ko"))
 		tmp[i-3] = 0;
 
@@ -74,6 +76,7 @@ static int rmmod(char *name)
 	ret = system(cmd);
 	if (ret)
 		fprintf(stderr, "Failed to remove kernel module using command %s\n", cmd);
+out:
 	free(tmp);
 	return ret;
 }
