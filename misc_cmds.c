@@ -74,8 +74,7 @@ static int set_ref_nvs(struct nl80211_state *state, struct nl_cb *cb,
 {
 	struct wl12xx_common cmn = {
 		.arch = UNKNOWN_ARCH,
-		.parse_ops = NULL,
-		.dual_mode = DUAL_MODE_UNSET,
+		.parse_ops = NULL
 	};
 
 	argc -= 2;
