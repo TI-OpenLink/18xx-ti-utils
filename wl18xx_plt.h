@@ -102,4 +102,29 @@ struct wl18xx_cmd_rx_stats {
 	__le32 good;
 } __attribute__((packed));
 
+struct wl18xx_cmd_start_tx {
+	struct wl1271_cmd_header header;
+	struct wl1271_cmd_test_header test;
+
+	__le32 radio_status;
+
+	__le32 delay;
+	__le32 rate;
+	__le32 size;
+	__le32 mode;
+	__le32 data_type;
+	__le32 gi;
+	__le32 options1;
+	__le32 options2;
+	__u8   src_addr[MAC_ADDR_LEN];
+	__u8   dst_addr[MAC_ADDR_LEN];
+	__le32 bandwidth;
+	__le32 padding;
+} __attribute__((packed));
+
+struct wl18xx_cmd_stop_tx {
+	struct wl1271_cmd_header header;
+	struct wl1271_cmd_test_header test;
+} __attribute__((packed));
+
 #endif /* __WL18XX_PLT_H__ */
