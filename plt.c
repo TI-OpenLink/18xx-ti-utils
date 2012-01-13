@@ -1108,3 +1108,77 @@ out_removenvs:
 }
 COMMAND(plt, autocalibrate, "<dev> <module path> <ini file1> <nvs file> <mac addr> ", 0, 0, CIB_NONE,
 	plt_autocalibrate, "Do automatic calibration\n");
+
+static int plt_get_mac_cb(struct nl_msg *msg, void *arg)
+{
+	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+	struct nlattr *td[WL1271_TM_ATTR_MAX + 1];
+	char *addr;
+	int lower;
+
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
+		  genlmsg_attrlen(gnlh, 0), NULL);
+
+	if (!tb[NL80211_ATTR_TESTDATA]) {
+		fprintf(stderr, "no data!\n");
+		return NL_SKIP;
+	}
+
+	nla_parse(td, WL1271_TM_ATTR_MAX, nla_data(tb[NL80211_ATTR_TESTDATA]),
+		  nla_len(tb[NL80211_ATTR_TESTDATA]), NULL);
+
+	addr = (char *) nla_data(td[WL1271_TM_ATTR_DATA]);
+
+	printf("BD_ADDR from fuse:\t0x%0x:0x%0x:0x%0x:0x%0x:0x%0x:0x%0x\n",
+	       addr[0], addr[1], addr[2],
+	       addr[3], addr[4], addr[5]);
+
+	lower = (addr[3] << 16) + (addr[4] << 8) + addr[5];
+
+	lower++;
+	printf("First WLAN MAC:\t\t0x%0x:0x%0x:0x%0x:0x%0x:0x%0x:0x%0x\n",
+	       addr[0], addr[1], addr[2],
+	       (lower & 0xff0000) >> 16,
+	       (lower & 0xff00) >> 8,
+	       (lower & 0xff));
+
+	lower++;
+	printf("Second WLAN MAC:\t0x%0x:0x%0x:0x%0x:0x%0x:0x%0x:0x%0x\n",
+	       addr[0], addr[1], addr[2],
+	       (lower & 0xff0000) >> 16,
+	       (lower & 0xff00) >> 8,
+	       (lower & 0xff));
+
+	return NL_SKIP;
+}
+
+static int plt_get_mac(struct nl80211_state *state, struct nl_cb *cb,
+		       struct nl_msg *msg, int argc, char **argv)
+{
+	struct nlattr *key;
+
+	if (argc != 0)
+		return 1;
+
+	key = nla_nest_start(msg, NL80211_ATTR_TESTDATA);
+	if (!key) {
+		fprintf(stderr, "%s> fail to nla_nest_start()\n", __func__);
+		return 1;
+	}
+
+	NLA_PUT_U32(msg, WL1271_TM_ATTR_CMD_ID, WL1271_TM_CMD_GET_MAC);
+
+	nla_nest_end(msg, key);
+
+	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, plt_get_mac_cb, NULL);
+
+	return 0;
+
+nla_put_failure:
+	fprintf(stderr, "%s> building message failed\n", __func__);
+	return 2;
+}
+COMMAND(plt, get_mac, "",
+	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_get_mac,
+	"Read MAC address from the Fuse ROM.\n");
