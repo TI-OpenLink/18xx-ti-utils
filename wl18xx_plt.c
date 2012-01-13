@@ -127,7 +127,6 @@ COMMAND(wl18xx_plt, stop_rx, "",
 	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_stop_rx,
 	"Stop gathering RX statistics for PLT.\n");
 
-
 static int plt_wl18xx_display_rx_stats(struct nl_msg *msg, void *arg)
 {
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
@@ -195,3 +194,115 @@ nla_put_failure:
 COMMAND(wl18xx_plt, get_rx_stats, "",
 	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_get_rx_stats,
 	"Retrieve RX statistics for PLT.\n");
+
+static int plt_wl18xx_start_tx(struct nl80211_state *state, struct nl_cb *cb,
+			       struct nl_msg *msg, int argc, char **argv)
+{
+	struct nlattr *key;
+	struct wl18xx_cmd_start_tx prms;
+
+	if (argc != 11)
+		return 1;
+
+	prms.test.id	= WL18XX_TEST_CMD_START_TX_SIMULATION;
+
+	prms.delay = atoi(argv[0]);
+	prms.rate = atoi(argv[1]);
+	prms.size = atoi(argv[2]);
+	prms.mode = atoi(argv[3]);
+	prms.data_type = atoi(argv[4]);
+	prms.gi = atoi(argv[5]);
+	prms.options1 = atoi(argv[6]);
+	prms.options2 = atoi(argv[7]);
+	str2mac(prms.src_addr, argv[8]);
+	str2mac(prms.dst_addr, argv[9]);
+	prms.bandwidth = atoi(argv[10]);
+
+	if (prms.rate < 0 || prms.rate > 29)
+		return 1;
+	if (prms.gi != 0 && prms.gi != 1)
+		return 1;
+	if (prms.bandwidth != 0 && prms.bandwidth != 1)
+		return 1;
+
+	key = nla_nest_start(msg, NL80211_ATTR_TESTDATA);
+	if (!key) {
+		fprintf(stderr, "fail to nla_nest_start()\n");
+		return 1;
+	}
+
+	NLA_PUT_U32(msg, WL1271_TM_ATTR_CMD_ID, WL1271_TM_CMD_TEST);
+	NLA_PUT(msg, WL1271_TM_ATTR_DATA, sizeof(prms), &prms);
+
+	nla_nest_end(msg, key);
+
+	return 0;
+
+nla_put_failure:
+	fprintf(stderr, "%s> building message failed\n", __func__);
+	return 2;
+}
+
+COMMAND(wl18xx_plt, start_tx, "<delay> <rate> <size> <mode> <data_type> <gi> "
+	"<options1> <options2> <source MAC> <dest MAC> <20|40>",
+	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_start_tx,
+	"Start TX transmissions for PLT.\n\n"
+	"<delay>\t\tdelay between packets in us\n"
+	"<rate>\t\ttransmission rate:\n"
+	"\t\t\t0  =  1.0 Mbps\t\t\t1  =  2.0 Mbps\n"
+	"\t\t\t2  =  5.0 Mbps\t\t\t3  = 11.0 Mbps\n"
+	"\t\t\t4  =  6.0 Mbps\t\t\t5  =  9.0 Mbps\n"
+	"\t\t\t6  = 12.0 Mbps\t\t\t7  = 18.0 Mbps\n"
+	"\t\t\t8  = 24.0 Mbps\t\t\t9  = 36.0 Mbps\n"
+	"\t\t\t10 = 48.0 Mbps\t\t\t11 = 54.0 Mbps\n"
+	"\t\t\t12 =  6.5 Mbps (MCS0)\t\t13 = 13.0 Mbps (MCS1)\n"
+	"\t\t\t14 = 19.5 Mbps (MCS2)\t\t15 = 26.0 Mbps (MCS3)\n"
+	"\t\t\t16 = 39.0 Mbps (MCS4)\t\t17 = 52.0 Mbps (MCS5)\n"
+	"\t\t\t18 = 58.5 Mbps (MCS6)\t\t19 = 65.0 Mbps (MCS7)\n"
+	"\t\t\t20 = 65.0 Mbps + 10% (MCS7 SGI)\t21 = MCS8/MCS4  at 40MHz\n"
+	"\t\t\t22 = MCS9/MCS5  at 40MHz\t23 = MCS10/MCS6 at 40MHz\n"
+	"\t\t\t24 = MCS11/MCS7 at 40MHz\t25 = MCS12/MCS7 at 40MHz SGI\n"
+	"\t\t\t26 = MCS13\t\t\t27 = MCS14\n"
+	"\t\t\t28 = MCS15\t\t\t29 = MCS15 SGI\n"
+	"<size>\t\tpacket size (bytes)\n"
+	"<mode>\t\tnumber of packets (0 = endless)\n"
+	"<data_type>\tTBD\n"
+	"<gi>\t\tguard interval (0 = normal, 1 = short)\n"
+	"<options1>\tTBD\n"
+	"<options2>\tTBD\n"
+	"<source MAC>\tsource MAC address (XX:XX:XX:XX:XX:XX)\n"
+	"<dest MAC>\tdestination MAC address (XX:XX:XX:XX:XX:XX)\n"
+	"<channel width>\tchannel width (0 = 20 MHz, 1 = 40 MHz)");
+
+static int plt_wl18xx_stop_tx(struct nl80211_state *state, struct nl_cb *cb,
+			      struct nl_msg *msg, int argc, char **argv)
+{
+	struct nlattr *key;
+	struct wl18xx_cmd_stop_tx prms;
+
+	if (argc != 0)
+		return 1;
+
+	prms.test.id	= WL18XX_TEST_CMD_STOP_TX_SIMULATION;
+
+	key = nla_nest_start(msg, NL80211_ATTR_TESTDATA);
+	if (!key) {
+		fprintf(stderr, "fail to nla_nest_start()\n");
+		return 1;
+	}
+
+	NLA_PUT_U32(msg, WL1271_TM_ATTR_CMD_ID, WL1271_TM_CMD_TEST);
+	NLA_PUT(msg, WL1271_TM_ATTR_DATA, sizeof(prms), &prms);
+
+	nla_nest_end(msg, key);
+
+	return 0;
+
+nla_put_failure:
+	fprintf(stderr, "%s> building message failed\n", __func__);
+	return 2;
+}
+
+COMMAND(wl18xx_plt, stop_tx, "",
+	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_stop_tx,
+	"Stop TX transmissions for PLT.\n");
