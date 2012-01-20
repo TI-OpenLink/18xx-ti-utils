@@ -81,15 +81,8 @@ int nvs_set_mac(char *nvsfile, char *mac)
 		}
 	}
 	else {
-		srand((unsigned)time(NULL));
-
-		in_mac[0] = 0x0;
-		in_mac[1] = rand()%256;
-		in_mac[2] = rand()%256;
-		in_mac[3] = rand()%256;
-		in_mac[4] = rand()%256;
-		in_mac[5] = rand()%256;
-		fprintf(stderr, "WARNING: No MAC specified. Using random MAC!");
+		fprintf(stderr, "No MAC address specified\n");
+		return -1;
 	}
 
 	fd = open(nvsfile, O_RDWR);
