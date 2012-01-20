@@ -1230,6 +1230,32 @@ static int plt_set_mac_from_fuse_cb(struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
+static int plt_set_mac_default_cb(struct nl_msg *msg, void *arg)
+{
+	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+	char *nvs_file = (char *) arg;
+
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
+		  genlmsg_attrlen(gnlh, 0), NULL);
+
+	if (!tb[NL80211_ATTR_TESTDATA]) {
+		fprintf(stderr, "no data!\n");
+		return NL_SKIP;
+	}
+
+	/*
+	 * No need to parse, we just need to know if the command
+	 * worked (ie. the hardware supports MAC from fuse) so the
+	 * driver can fetch it by itself.
+	 */
+
+	/* ignore the return value, since a message was already printed out */
+	nvs_set_mac(nvs_file, ZERO_MAC);
+
+	return NL_SKIP;
+}
+
 static int plt_set_mac_from_fuse(struct nl80211_state *state, struct nl_cb *cb,
 				 struct nl_msg *msg, int argc, char **argv)
 {
@@ -1238,15 +1264,30 @@ static int plt_set_mac_from_fuse(struct nl80211_state *state, struct nl_cb *cb,
 HIDDEN(plt, set_mac_from_fuse, "<nvs file>",
        NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_set_mac_from_fuse);
 
+static int plt_set_mac_default(struct nl80211_state *state, struct nl_cb *cb,
+			       struct nl_msg *msg, int argc, char **argv)
+{
+	return plt_get_mac_from_fuse(msg, cb, plt_set_mac_default_cb, argv[0]);
+}
+HIDDEN(plt, set_mac_default, "<nvs file>",
+       NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_set_mac_default);
+
 static int plt_set_mac(struct nl80211_state *state, struct nl_cb *cb,
 		       struct nl_msg *msg, int argc, char **argv)
 {
 	char *nvs_file;
 
-	if (argc < 5 || argc > 5)
+	if (argc < 4 || argc > 5)
 		return 1;
 
 	nvs_file = argv[3];
+
+	if (argc == 4 || !strcmp(argv[4], "default")) {
+		char *prms[] = { argv[0], argv[1], "set_mac_default",
+				 nvs_file };
+
+		return handle_cmd(state, II_NETDEV, ARRAY_SIZE(prms), prms);
+	}
 
 	if (!strcmp(argv[4], "from_fuse")) {
 		char *prms[] = { argv[0], argv[1], "set_mac_from_fuse",
@@ -1260,9 +1301,11 @@ static int plt_set_mac(struct nl80211_state *state, struct nl_cb *cb,
 
 	return 0;
 }
-COMMAND(plt, set_mac, "<nvs file> [<MAC address>|from_fuse]",
+COMMAND(plt, set_mac, "<nvs file> [<MAC address>|from_fuse|default]",
 	0, 0, CIB_NETDEV, plt_set_mac,
 	"Set a MAC address to the NVS file.\n\n"
 	"<MAC address>\tspecific address to use (XX:XX:XX:XX:XX:XX)\n"
 	"from_fuse\ttry to read from the fuse ROM, if not available the command fails\n"
+	"default\t\twrite 00:00:00:00:00:00 to have the driver read from the fuse ROM,\n"
+	"\t\t\tfails if not available\n"
 	"00:00:00:00:00:00\tforce use of a zeroed MAC address (use with caution!)\n");
