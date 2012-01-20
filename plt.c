@@ -28,6 +28,8 @@
 #include "ini.h"
 #include "nvs.h"
 
+#define ZERO_MAC	"00:00:00:00:00:00"
+
 #ifndef SIOCETHTOOL
 #define SIOCETHTOOL     0x8946
 #endif
@@ -1153,13 +1155,10 @@ static int plt_get_mac_cb(struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
-static int plt_get_mac(struct nl80211_state *state, struct nl_cb *cb,
-		       struct nl_msg *msg, int argc, char **argv)
+static int plt_get_mac_from_fuse(struct nl_msg *msg, struct nl_cb *cb,
+				 nl_recvmsg_msg_cb_t callback, void *arg)
 {
 	struct nlattr *key;
-
-	if (argc != 0)
-		return 1;
 
 	key = nla_nest_start(msg, NL80211_ATTR_TESTDATA);
 	if (!key) {
@@ -1171,7 +1170,7 @@ static int plt_get_mac(struct nl80211_state *state, struct nl_cb *cb,
 
 	nla_nest_end(msg, key);
 
-	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, plt_get_mac_cb, NULL);
+	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, callback, arg);
 
 	return 0;
 
@@ -1179,6 +1178,91 @@ nla_put_failure:
 	fprintf(stderr, "%s> building message failed\n", __func__);
 	return 2;
 }
+
+static int plt_get_mac(struct nl80211_state *state, struct nl_cb *cb,
+		       struct nl_msg *msg, int argc, char **argv)
+{
+	if (argc != 0)
+		return 1;
+
+	return plt_get_mac_from_fuse(msg, cb, plt_get_mac_cb, NULL);
+}
 COMMAND(plt, get_mac, "",
 	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_get_mac,
 	"Read MAC address from the Fuse ROM.\n");
+
+static int plt_set_mac_from_fuse_cb(struct nl_msg *msg, void *arg)
+{
+	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+	struct nlattr *td[WL1271_TM_ATTR_MAX + 1];
+	char mac[sizeof(ZERO_MAC)];
+	char *addr;
+	char *nvs_file = (char *) arg;
+	int lower;
+
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
+		  genlmsg_attrlen(gnlh, 0), NULL);
+
+	if (!tb[NL80211_ATTR_TESTDATA]) {
+		fprintf(stderr, "no data!\n");
+		return NL_SKIP;
+	}
+
+	nla_parse(td, WL1271_TM_ATTR_MAX, nla_data(tb[NL80211_ATTR_TESTDATA]),
+		  nla_len(tb[NL80211_ATTR_TESTDATA]), NULL);
+
+	addr = (char *) nla_data(td[WL1271_TM_ATTR_DATA]);
+
+	/*
+	 * The first address is the BD_ADDR, the next is the first
+	 * MAC.  Increment only the lower part, so we don't overflow
+	 * to the OUI */
+	lower = (addr[3] << 16) + (addr[4] << 8) + addr[5] + 1;
+
+	snprintf(mac, sizeof(mac), "%02x:%02x:%02x:%02x:%02x:%02x",
+		 addr[0], addr[1], addr[2], (lower & 0xff0000) >> 16,
+		 (lower & 0xff00) >> 8, (lower & 0xff));
+
+	/* ignore the return value, since a message was already printed out */
+	nvs_set_mac(nvs_file, mac);
+
+	return NL_SKIP;
+}
+
+static int plt_set_mac_from_fuse(struct nl80211_state *state, struct nl_cb *cb,
+				 struct nl_msg *msg, int argc, char **argv)
+{
+	return plt_get_mac_from_fuse(msg, cb, plt_set_mac_from_fuse_cb, argv[0]);
+}
+HIDDEN(plt, set_mac_from_fuse, "<nvs file>",
+       NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_set_mac_from_fuse);
+
+static int plt_set_mac(struct nl80211_state *state, struct nl_cb *cb,
+		       struct nl_msg *msg, int argc, char **argv)
+{
+	char *nvs_file;
+
+	if (argc < 5 || argc > 5)
+		return 1;
+
+	nvs_file = argv[3];
+
+	if (!strcmp(argv[4], "from_fuse")) {
+		char *prms[] = { argv[0], argv[1], "set_mac_from_fuse",
+				 nvs_file };
+
+		return handle_cmd(state, II_NETDEV, ARRAY_SIZE(prms), prms);
+	}
+
+	if (nvs_set_mac(nvs_file, argv[4]) != 0)
+		return 1;
+
+	return 0;
+}
+COMMAND(plt, set_mac, "<nvs file> [<MAC address>|from_fuse]",
+	0, 0, CIB_NETDEV, plt_set_mac,
+	"Set a MAC address to the NVS file.\n\n"
+	"<MAC address>\tspecific address to use (XX:XX:XX:XX:XX:XX)\n"
+	"from_fuse\ttry to read from the fuse ROM, if not available the command fails\n"
+	"00:00:00:00:00:00\tforce use of a zeroed MAC address (use with caution!)\n");
