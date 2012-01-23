@@ -1005,12 +1005,13 @@ static int plt_autocalibrate(struct nl80211_state *state, struct nl_cb *cb,
 	};
 
 	char *devname, *modpath, *inifile1, *macaddr;
+	char *set_mac_prms[5];
 	int single_dual = 0, res, fems_parsed;
 
 	argc -= 2;
 	argv += 2;
 
-	if (argc != 5) {
+	if (argc < 4 || argc > 5) {
 		return 1;
 	}
 
@@ -1024,8 +1025,13 @@ static int plt_autocalibrate(struct nl80211_state *state, struct nl_cb *cb,
 	argc--;
 
 	cmn.nvs_name = get_opt_nvsoutfile(argc--, argv++);
-	macaddr = *argv++;
-	argc--;
+
+	if (argc) {
+		macaddr = *argv++;
+		argc--;
+	} else {
+		macaddr = NULL;
+	}
 
 	if (file_exist(cmn.nvs_name) >= 0) {
 		fprintf(stderr, "nvs file %s. File already exists. Won't overwrite.\n", cmn.nvs_name);
@@ -1095,7 +1101,15 @@ static int plt_autocalibrate(struct nl80211_state *state, struct nl_cb *cb,
 		goto out_power_off;
 	}
 
-	res = nvs_set_mac(cmn.nvs_name, macaddr);
+	set_mac_prms[0] = devname;
+	set_mac_prms[1] = "plt";
+	set_mac_prms[2] = "set_mac";
+	set_mac_prms[3] = cmn.nvs_name;
+	set_mac_prms[4] = macaddr;
+
+	res = handle_cmd(state, II_NETDEV,
+			 ARRAY_SIZE(set_mac_prms) - (!macaddr),
+			 set_mac_prms);
 	if (res) {
 		goto out_power_off;
 	}
@@ -1130,8 +1144,14 @@ out_removenvs:
 	return 0;
 
 }
-COMMAND(plt, autocalibrate, "<dev> <module path> <ini file1> <nvs file> <mac addr> ", 0, 0, CIB_NONE,
-	plt_autocalibrate, "Do automatic calibration\n");
+COMMAND(plt, autocalibrate, "<dev> <module path> <ini file1> <nvs file> "
+	"[<MAC address>|from_fuse|default]", 0, 0, CIB_NONE, plt_autocalibrate,
+	"Do automatic calibration.\n"
+	"The MAC address value can be:\n"
+	"from_fuse\ttry to read from the fuse ROM, if not available the command fails\n"
+	"default\t\twrite 00:00:00:00:00:00 to have the driver read from the fuse ROM,\n"
+	"\t\t\tfails if not available\n"
+	"00:00:00:00:00:00\tforce use of a zeroed MAC address (use with caution!)\n");
 
 static int plt_get_mac_cb(struct nl_msg *msg, void *arg)
 {
