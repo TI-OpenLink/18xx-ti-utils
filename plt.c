@@ -867,23 +867,36 @@ fail_out:
 COMMAND(plt, rx_statistics, NULL, 0, 0, CIB_NONE, plt_rx_statistics,
 	"Get Rx statistics\n");
 
+static int plt_do_power_on(struct nl80211_state *state, char *devname)
+{
+	int err;
+	char *pm_on[4] = { devname, "plt", "power_mode", "on" };
+
+	err = handle_cmd(state, II_NETDEV, ARRAY_SIZE(pm_on), pm_on);
+	if (err < 0)
+		fprintf(stderr, "Fail to set PLT power mode on\n");
+
+	return err;
+}
+
+static int plt_do_power_off(struct nl80211_state *state, char *devname)
+{
+	int err;
+	char *prms[4] = { devname, "plt", "power_mode", "off"};
+
+	err = handle_cmd(state, II_NETDEV, ARRAY_SIZE(prms), prms);
+	if (err < 0)
+		fprintf(stderr, "Failed to set PLT power mode on\n");
+
+	return err;
+}
+
+
 static int plt_do_calibrate(struct nl80211_state *state, struct nl_cb *cb,
 			struct nl_msg *msg, int single_dual, char *nvs_file,
 			char *devname, enum wl12xx_arch arch)
 {
 	int ret = 0, err;
-
-	/* power mode on */
-	{
-		char *pm_on[4] = { devname, "plt", "power_mode", "on" };
-
-		err = handle_cmd(state, II_NETDEV, ARRAY_SIZE(pm_on), pm_on);
-		if (err < 0) {
-			fprintf(stderr, "Fail to set PLT power mode on\n");
-			ret = err;
-			goto fail_out_final;
-		}
-	}
 
 	/* tune channel */
 	{
@@ -946,18 +959,6 @@ static int plt_do_calibrate(struct nl80211_state *state, struct nl_cb *cb,
 	}
 
 fail_out:
-	/* power mode off */
-	{
-		char *prms[4] = { devname, "plt", "power_mode", "off"};
-
-		err = handle_cmd(state, II_NETDEV, ARRAY_SIZE(prms), prms);
-		if (err < 0) {
-			fprintf(stderr, "Failed to set PLT power mode on\n");
-			ret = err;
-		}
-	}
-
-fail_out_final:
 	if (ret < 0)
 		return 1;
 
@@ -967,6 +968,7 @@ fail_out_final:
 static int plt_calibrate(struct nl80211_state *state, struct nl_cb *cb,
 			struct nl_msg *msg, int argc, char **argv)
 {
+	int ret, err;
 	int single_dual = 0;
 
 	if (argc > 2 && (strncmp(argv[2], "dual", 4) ==  0))
@@ -974,8 +976,19 @@ static int plt_calibrate(struct nl80211_state *state, struct nl_cb *cb,
 	else
 		single_dual = 0;	/* going for single band calibration */
 
-	return plt_do_calibrate(state, cb, msg, single_dual, NEW_NVS_NAME,
-	                        "wlan0", UNKNOWN_ARCH);
+
+	err = plt_do_power_on(state, "wlan0");
+	if (err < 0)
+		goto out;
+
+	err = plt_do_calibrate(state, cb, msg, single_dual, NEW_NVS_NAME,
+			       "wlan0", UNKNOWN_ARCH);
+
+	ret = plt_do_power_off(state, "wlan0");
+	if (ret < 0)
+		err = ret;
+out:
+	return err;
 }
 
 COMMAND(plt, calibrate, "[<single|dual>]", 0, 0, CIB_NONE,
@@ -1072,17 +1085,23 @@ static int plt_autocalibrate(struct nl80211_state *state, struct nl_cb *cb,
 		goto out_removenvs;
 	}
 
+	res = plt_do_power_on(state, devname);
+	if (res < 0)
+		goto out_rmmod;
+
 	res = plt_do_calibrate(state, cb, msg, single_dual,
 	                      cmn.nvs_name, devname, cmn.arch);
 	if (res) {
-		goto out_rmmod;
+		goto out_power_off;
 	}
 
 	res = nvs_set_mac(cmn.nvs_name, macaddr);
 	if (res) {
-		goto out_rmmod;
+		goto out_power_off;
 	}
 
+	/* we can ignore the return value, because we rmmod anyway */
+	plt_do_power_off(state, devname);
 	rmmod(modpath);
 
 	printf("Calibration done. ");
@@ -1099,6 +1118,9 @@ static int plt_autocalibrate(struct nl80211_state *state, struct nl_cb *cb,
 	       cmn.nvs_name);
 	return 0;
 
+out_power_off:
+	/* we can ignore the return value, because we rmmod anyway */
+	plt_do_power_off(state, devname);
 out_rmmod:
 	rmmod(modpath);
 
