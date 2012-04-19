@@ -10,6 +10,7 @@ LOCAL_SRC_FILES := \
         misc_cmds.c \
         calibrator.c \
         plt.c \
+	wl18xx_plt.c \
         ini.c
 
 LOCAL_CFLAGS := -DCONFIG_LIBNL20
