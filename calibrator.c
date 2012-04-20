@@ -468,7 +468,8 @@ int main(int argc, char **argv)
 		argv++;
 	}
 
-	if (argc > 0 && strcmp(*argv, "--version") == 0) {
+	if (argc > 0 && ((strcmp(*argv, "--version") == 0) ||
+			 (strcmp(*argv, "-v") == 0))) {
 		version();
 		return 0;
 	}
