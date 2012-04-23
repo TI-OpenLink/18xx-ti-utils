@@ -268,12 +268,18 @@ air:
 
    calibrator wlan0 wl18xx_plt tune_channel <channel> <band> <bandwidth>
 
-   Eg., to use channel 1 with 20MHz bandwidth:
+   Eg., to use channel 1 with no HT bandwidth:
 	calibrator wlan0 wl18xx_plt tune_channel 1 0 0
 
    Eg., to use channel 136 with 40MHz bandwidth:
 	calibrator wlan0 wl18xx_plt tune_channel 136 1 1
 
+   Eg., to use channel 1 with 40MHz Minus  bandwidth:
+	calibrator wlan0 wl18xx_plt tune_channel 1 0 2
+   
+   Eg., to use channel 1 with 40MHz Plus bandwidth:
+	calibrator wlan0 wl18xx_plt tune_channel 1 0 3
+   
 3. Start transmitting packets:
 
    calibrator wlan0 wl18xx_plt start_tx <delay> <rate> <size> <mode> <data_type> <gi> <options1> <options2> <source MAC> <dest MAC> <20|40>
@@ -352,6 +358,41 @@ antennas and RF in general is working properly.
 5. Stop gathering RX statistics:
 
    calibrator wlan0 wl18xx_plt stop_rx
+   
+   
+   
+--- TX set power in wl18xx
+
+1. Boot the firmware in PLT mode:
+
+   calibrator wlan0 plt power_mode on
+
+2. Select the channel to use (see above):
+
+   calibrator wlan0 wl18xx_plt tune_channel <channel> <band> <bandwidth>
+
+3. set the power 
+ 
+   calibrator wlan0 wl18xx_plt set_tx_power <output_power> <level> <band> 
+                 <primary_channel> <2nd_channel> <antenna> <non_serving_channel>
+                  <channel_limitation> <frontend_limit> <gain_calculation>
+                   <analog_gain_control_id> <post_dpd_gain>
+
+4. start transmit (see start TX)
+   
+   
+---  Set antenna mosde in wl18xx
+
+1. Boot the firmware in PLT mode:
+
+   calibrator wlan0 plt power_mode on
+
+2. set the antenna :
+
+   calibrator wlan0 wl18xx_plt set_antenna_mode <primary_rf_channel> 
+                                 <rf_chain_1_enable> <rf_chain_2_enable>
+
+
 
 -------------------------------------------------------------------------------
 

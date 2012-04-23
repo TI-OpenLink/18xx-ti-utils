@@ -67,6 +67,8 @@ enum wl18xx_test_cmds {
 	WL18XX_TEST_CMD_GET_RX_STATISTICS,
 	WL18XX_TEST_CMD_SET_NVS_VERSION,
 	WL18XX_TEST_CMD_CHANNEL_TUNE,
+	WL18XX_TEST_CMD_TX_POWER,
+	WL18XX_TEST_CMD_SET_ANTENNA_MODE,
 };
 
 struct wl18xx_cmd_channel_tune {
@@ -125,6 +127,37 @@ struct wl18xx_cmd_start_tx {
 struct wl18xx_cmd_stop_tx {
 	struct wl1271_cmd_header header;
 	struct wl1271_cmd_test_header test;
+} __attribute__((packed));
+
+struct wl18xx_cmd_set_tx_power {
+	struct wl1271_cmd_header header;
+	struct wl1271_cmd_test_header test;
+
+	__le32 radio_status;
+
+	__le32 mac_des_pwr;
+	__le32 mac_lvl_idx;
+	__le32 freq_band;
+	__le32 freq_prim_chan_num;
+	__le32 freq_2nd_chan_idx;
+	__le32 mac_ant_select;
+	__le32 mac_non_srv;
+	__le32 mac_chan_lim_dis;
+	__le32 mac_fem_lim_dis;
+	__le32 mac_gain_calc_mode;
+	__le32 mac_analog_gain_control_idx;
+	__le32 mac_post_dpd_gain;
+} __attribute__((packed));
+
+struct wl18xx_cmd_set_antenna_mode {
+	struct wl1271_cmd_header header;
+	struct wl1271_cmd_test_header test;
+
+	__le32 radio_status;
+
+	__le32 primary_rf_channel;
+	__le32 rf_chain_1_enable;
+	__le32 rf_chain_2_enable;
 } __attribute__((packed));
 
 #endif /* __WL18XX_PLT_H__ */

@@ -25,6 +25,137 @@
 
 SECTION(wl18xx_plt);
 
+static int  plt_wl18xx_set_antenna_mode(struct nl80211_state *state, struct nl_cb *cb,
+			      struct nl_msg *msg, int argc, char **argv)
+{
+	struct nlattr *key;
+	struct wl18xx_cmd_set_antenna_mode prms;
+
+	if (argc != 3)
+		return 1;
+
+	prms.test.id	= WL18XX_TEST_CMD_SET_ANTENNA_MODE;
+
+	prms.primary_rf_channel = atoi(argv[0]);
+	prms.rf_chain_1_enable = atoi(argv[1]);
+	prms.rf_chain_2_enable = atoi(argv[2]);
+
+	if (prms.primary_rf_channel != 1 && prms.primary_rf_channel != 2 )
+		return 1;
+
+	if (prms.rf_chain_1_enable > 1)
+		return 1;
+
+	if (prms.rf_chain_2_enable > 1)
+			return 1;
+
+	key = nla_nest_start(msg, NL80211_ATTR_TESTDATA);
+	if (!key) {
+		fprintf(stderr, "fail to nla_nest_start()\n");
+		return 1;
+	}
+
+	NLA_PUT_U32(msg, WL1271_TM_ATTR_CMD_ID, WL1271_TM_CMD_TEST);
+	NLA_PUT(msg, WL1271_TM_ATTR_DATA, sizeof(prms), &prms);
+
+	nla_nest_end(msg, key);
+
+	return 0;
+
+nla_put_failure:
+	fprintf(stderr, "%s> building message failed\n", __func__);
+	return 2;
+}
+
+
+COMMAND(wl18xx_plt, set_antenna_mode , "<primary_rf_channel> <rf_chain_1_enable> "
+		"<rf_chain_2_enable>",
+	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_set_antenna_mode,
+	"set antenna modefor PLT.\n");
+
+
+
+static int plt_wl18xx_set_tx_power(struct nl80211_state *state,
+		struct nl_cb *cb, struct nl_msg *msg, int argc, char **argv)
+{
+	struct nlattr *key;
+	struct wl18xx_cmd_set_tx_power prms;
+
+	if (argc != 12)
+		return 1;
+
+	prms.test.id	= WL18XX_TEST_CMD_TX_POWER;
+
+	prms.mac_des_pwr = atoi(argv[0]);
+	prms.mac_lvl_idx = atoi(argv[1]);
+	prms.freq_band = atoi(argv[2]);
+	prms.freq_prim_chan_num = atoi(argv[3]);
+	prms.freq_2nd_chan_idx = atoi(argv[4]);
+	prms.mac_ant_select = atoi(argv[5]);
+	prms.mac_non_srv = atoi(argv[6]);
+	prms.mac_chan_lim_dis = atoi(argv[7]);
+	prms.mac_fem_lim_dis = atoi(argv[8]);
+	prms.mac_gain_calc_mode = atoi(argv[9]);
+	prms.mac_analog_gain_control_idx = atoi(argv[10]);
+	prms.mac_post_dpd_gain = atoi(argv[11]);
+
+	if (prms.mac_lvl_idx > 3)
+		return 1;
+
+	if (prms.freq_band > 2)
+		return 1;
+
+	if (prms.freq_prim_chan_num > 14 || prms.freq_prim_chan_num == 0)
+		return 1;
+
+	if (prms.mac_ant_select > 3)
+		return 1;
+
+	if (prms.mac_non_srv > 1)
+		return 1;
+
+	if (prms.mac_chan_lim_dis > 1)
+		return 1;
+
+	if (prms.mac_fem_lim_dis > 1)
+		return 1;
+
+	if (prms.mac_gain_calc_mode > 2)
+		return 1;
+
+	if (prms.mac_analog_gain_control_idx > 4)
+		return 1;
+
+	if (prms.mac_post_dpd_gain > 4)
+		return 1;
+
+	key = nla_nest_start(msg, NL80211_ATTR_TESTDATA);
+	if (!key) {
+		fprintf(stderr, "fail to nla_nest_start()\n");
+		return 1;
+	}
+
+	NLA_PUT_U32(msg, WL1271_TM_ATTR_CMD_ID, WL1271_TM_CMD_TEST);
+	NLA_PUT(msg, WL1271_TM_ATTR_DATA, sizeof(prms), &prms);
+
+	nla_nest_end(msg, key);
+
+	return 0;
+
+nla_put_failure:
+	fprintf(stderr, "%s> building message failed\n", __func__);
+	return 2;
+}
+
+
+
+COMMAND(wl18xx_plt, set_tx_power, "<output_power> <level> <band> "
+		"<primary_channel> <2nd_channel> <antenna> <non_serving_channel> "
+		"<channel_limitation> <frontend_limit> <gain_calculation> "
+		"<analog_gain_control_id> <post_dpd_gain>",
+	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_set_tx_power,
+	"set TX transmissions power for PLT.\n");
+
 static int plt_wl18xx_tune_channel(struct nl80211_state *state, struct nl_cb *cb,
 				   struct nl_msg *msg, int argc, char **argv)
 {
@@ -306,3 +437,4 @@ nla_put_failure:
 COMMAND(wl18xx_plt, stop_tx, "",
 	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_stop_tx,
 	"Stop TX transmissions for PLT.\n");
+
