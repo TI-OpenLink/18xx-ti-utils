@@ -319,6 +319,10 @@ air:
 
       calibrator wlan0 wl18xx_plt start_tx 500000 19 1024 0 0 0 0 0 00:11:22:33:44:55 01:02:03:04:05:06 1
 
+note, In start_tx there are 3 fields that are TBD and the user must send the command with some value, please “0”:
+           - <option1> and <option2> set as 0.
+           - <data_type> set as 0.
+
 4. To stop transmitting packets:
 
       calibrator wlan0 wl18xx_plt stop_tx
@@ -377,6 +381,9 @@ antennas and RF in general is working properly.
                  <primary_channel> <2nd_channel> <antenna> <non_serving_channel>
                   <channel_limitation> <frontend_limit> <gain_calculation>
                    <analog_gain_control_id> <post_dpd_gain>
+
+good default values are:
+calibrator wlan0 wl18xx_plt set_tx_power <out_power> 0 <band> <channel> <freq2ndChInd> 0 0 0 0 0 0 0
 
 4. start transmit (see start TX)
    
