@@ -105,7 +105,7 @@ static int plt_wl18xx_set_tx_power(struct nl80211_state *state,
 	if (prms.freq_band > 2)
 		return 1;
 
-	if (prms.freq_prim_chan_num > 14 || prms.freq_prim_chan_num == 0)
+	if (prms.freq_prim_chan_num <= 0)
 		return 1;
 
 	if (prms.mac_ant_select > 3)
