@@ -383,26 +383,6 @@ static size_t print_element(struct element *elem, int level, void *data)
 	return len;
 }
 
-static void print_struct(const char *root_struct)
-{
-	int i, j;
-
-	for (j = 0; j < n_structs; j++) {
-		struct structure *curr;
-
-		curr = &structures[j];
-
-		if (!strcmp(curr->name, root_struct)) {
-			printf("struct: '%s' (size = %d)\n", curr->name,
-			       curr->size);
-
-			for (i = 0; i < curr->n_elements; i++)
-				print_element(&curr->elements[i], 1, NULL);
-			break;
-		}
-	}
-}
-
 static void print_structs(void *buffer, struct structure *structure)
 {
 	int i, len;
