@@ -234,12 +234,13 @@ out:
 
 static void print_usage(char *executable)
 {
-	printf("Usage:\n\t%s [-s <source_file>] [-b <binary_file>] [-p] [-d] [-c <conf_binary>\n\n"
+	printf("Usage:\n\t%s [-s <source_file>] [-b <binary_file>] [-c <conf_binary>] [-p] [-d]\n\n"
 	       "\t-s, --source-struct\tuse the structure specified in a C header file\n"
 	       "\t-b, --binary-struct\tspecify the binary file where the structure is defined\n"
+	       "\t-c, --configuration\tdefine the location of the binary configuration file\n"
 	       "\t-p, --print-struct\tprint out the structure\n"
 	       "\t-d, --dump\t\tdump the entire configuration binary in human-readable format\n"
-	       "\t-c, --configuration\tdefine the location of the binary configuration file\n"
+	       "\t-h, --help\t\tprint this help\n"
 	       "\n",
 	       executable);
 }
@@ -474,9 +475,10 @@ static void free_file(void *buffer)
 struct option long_options[] = {
 	{ "binary-struct",	required_argument,	NULL,	'b' },
 	{ "source-struct",	required_argument,	NULL,	's' },
+	{ "configuration",	required_argument,	NULL,	'c' },
 	{ "print-struct",	no_argument,		NULL,	'p' },
 	{ "dump",		no_argument,		NULL,	'd' },
-	{ "configuration",	required_argument,	NULL,	'c' },
+	{ "help",		no_argument,		NULL,	'h' },
 	{ 0, 0, 0, 0 },
 };
 
@@ -490,7 +492,7 @@ int main(int argc, char **argv)
 	int c, ret;
 
 	while (1) {
-		c = getopt_long(argc, argv, "s:b:pdc:", long_options, NULL);
+		c = getopt_long(argc, argv, "s:b:c:pdh", long_options, NULL);
 
 		if (c < 0)
 			break;
@@ -512,6 +514,10 @@ int main(int argc, char **argv)
 		case 'd':
 		case 'c':
 			break;
+
+		case 'h':
+			print_usage(argv[0]);
+			exit(0);
 
 		default:
 			print_usage(argv[0]);
