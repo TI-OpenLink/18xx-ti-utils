@@ -383,20 +383,6 @@ static size_t print_element(struct element *elem, int level, void *data)
 	return len;
 }
 
-static void print_structs(void)
-{
-	int i, j;
-
-	for (j = 0; j < n_structs; j++) {
-		struct structure *curr;
-
-		curr = &structures[j];
-
-		for (i = 0; i < curr->n_elements; i++)
-			print_element(&curr->elements[i], 1, NULL);
-	}
-}
-
 static void print_struct(const char *root_struct)
 {
 	int i, j;
@@ -417,14 +403,17 @@ static void print_struct(const char *root_struct)
 	}
 }
 
-static void dump_conf(void *buffer, struct structure *structure)
+static void print_structs(void *buffer, struct structure *structure)
 {
-	int i;
+	int i, len;
 	char *pos = buffer;
 
-	for (i = 0; i < structure->n_elements; i++)
-		pos += print_element(&structure->elements[i],
-				     1, pos);
+	for (i = 0; i < structure->n_elements; i++) {
+		len = print_element(&structure->elements[i],
+				    1, pos);
+		if (pos)
+			pos += len;
+	}
 }
 
 static int read_file(const char *filename, void **buffer, size_t size)
@@ -564,7 +553,7 @@ int main(int argc, char **argv)
 
 	switch (command) {
 	case 'p':
-		print_structs();
+		print_structs(NULL, root_struct);
 		break;
 
 	case 'd':
@@ -574,7 +563,7 @@ int main(int argc, char **argv)
 		if (ret < 0)
 			goto out;
 
-		dump_conf(conf_buf, root_struct);
+		print_structs(conf_buf, root_struct);
 		break;
 	}
 
