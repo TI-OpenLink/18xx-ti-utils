@@ -56,12 +56,12 @@ struct type types[] = {
 	{ "__le16", 2, "%d" },
 };
 
+#define DEFAULT_RAW_FILENAME	"/sys/kernel/debug/ieee80211/phy0/wlcore/wl18xx/conf"
+#define DEFAULT_DUMP_STRUCT	"wlcore_conf_file"
+#define MAX_INDENT		8
+#define INDENT_CHAR		"\t"
 
-#define DUMP_STRUCT	"wlcore_conf_file"
-#define MAX_INDENT	8
-#define INDENT_CHAR	"\t"
-
-#define STRUCT_BASE	1000
+#define STRUCT_BASE		1000
 
 #define STRUCT_PATTERN 	"[\n\t\r ]*struct[\n\t\r ]+([a-zA-Z0-9_]+)"	\
 	"[\n\t\r ]*\\{[\n\t\r ]*([^}]*)\\}[\n\t\r ]*"			\
@@ -234,7 +234,14 @@ out:
 
 static void print_usage(char *executable)
 {
-	printf("Usage:\n\t%s <header_file> <binary_file>\n", executable);
+	printf("Usage:\n\t%s [-s <source_file>] [-b <binary_file>] [-p] [-d] [-c <conf_binary>\n\n"
+	       "\t-s, --source-struct\tuse the structure specified in a C header file\n"
+	       "\t-b, --binary-struct\tspecify the binary file where the structure is defined\n"
+	       "\t-p, --print-struct\tprint out the structure\n"
+	       "\t-d, --dump\t\tdump the entire configuration binary in human-readable format\n"
+	       "\t-c, --configuration\tdefine the location of the binary configuration file\n"
+	       "\n",
+	       executable);
 }
 
 static void free_structs(void)
@@ -465,26 +472,45 @@ static void free_file(void *buffer)
 }
 
 struct option long_options[] = {
-	{ "header",	no_argument,	NULL,	'd' },
+	{ "binary-struct",	required_argument,	NULL,	'b' },
+	{ "source-struct",	required_argument,	NULL,	's' },
+	{ "print-struct",	no_argument,		NULL,	'p' },
+	{ "dump",		no_argument,		NULL,	'd' },
+	{ "configuration",	required_argument,	NULL,	'c' },
 	{ 0, 0, 0, 0 },
 };
 
 int main(int argc, char **argv)
 {
 	void *header_buf, *raw_buf;
-	char *header_filename, *raw_filename;
+	char *header_filename = NULL;
+	char *binary_struct_filename = NULL;
+	char *raw_filename = NULL;
 	struct structure *dump_struct;
 	int c, ret;
 
 	while (1) {
-		c = getopt_long(argc, argv, "d:", long_options, NULL);
+		c = getopt_long(argc, argv, "s:b:pdc:", long_options, NULL);
 
 		if (c < 0)
 			break;
 
 		switch(c) {
+		case 's':
+			header_filename = optarg;
+			printf("Read struct from header file %s\n",
+			       header_filename);
+			break;
+
+		case 'b':
+			binary_struct_filename = optarg;
+			printf("Read struct from binary file %s\n",
+			       binary_struct_filename);
+			break;
+
+		case 'p':
 		case 'd':
-			printf("Option -d selected\n");
+		case 'c':
 			break;
 
 		default:
@@ -493,25 +519,22 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (argc < 3) {
-		print_usage(argv[0]);
-		exit(-1);
+	if (!raw_filename)
+		raw_filename = strdup(DEFAULT_RAW_FILENAME);
+
+	if (header_filename) {
+		ret = read_file(header_filename, &header_buf, 0);
+		if (ret < 0)
+			goto out;
+
+		parse_header(header_buf);
 	}
 
-	header_filename = argv[1];
-	raw_filename = argv[2];
-
-	ret = read_file(header_filename, &header_buf, 0);
-	if (ret < 0)
-		goto out;
-
-	parse_header(header_buf);
-
-	dump_struct = get_struct(DUMP_STRUCT);
+	dump_struct = get_struct(DEFAULT_DUMP_STRUCT);
 	if (!dump_struct) {
 		fprintf(stderr,
 			"error: struct to be dumped (%s) is not defined\n",
-			DUMP_STRUCT);
+			DEFAULT_DUMP_STRUCT);
 		ret = -1;
 		goto out;
 	}
