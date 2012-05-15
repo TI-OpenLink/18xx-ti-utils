@@ -67,7 +67,7 @@ struct type types[] = {
 	"[\n\t\r ]*\\{[\n\t\r ]*([^}]*)\\}[\n\t\r ]*"			\
 	"[a-zA-Z0-9_]*;[\n\t\r ]*"
 
-#define ELEMENT_PATTERN	"[\n\t\r ]*([u]?int(8|16|32)|[A-Za-z0-9_]+)[\n\t\r ]+" \
+#define ELEMENT_PATTERN	"[\n\t\r ]*([A-Za-z0-9_]+)[\n\t\r ]+" \
 	"([a-zA-Z_][a-zA-Z0-9_]*)(\\[([0-9]+)\\])?[\n\t\r ]*;[\n\t\r ]*"
 
 #define CC_COMMENT_PATTERN	"(([^/]|[^/][^/])*)//[^\n]*\n(.*)"
@@ -192,10 +192,10 @@ static int parse_elements(char *orig_str, struct element **elements,
 		curr_element = &(*elements)[n_elements - 1];
 
 		curr_element->name =
-			strndup(str + m[3].rm_so, m[3].rm_eo - m[3].rm_so);
+			strndup(str + m[2].rm_so, m[2].rm_eo - m[2].rm_so);
 
 		array_size_str =
-			strndup(str + m[5].rm_so, m[5].rm_eo - m[5].rm_so);
+			strndup(str + m[4].rm_so, m[4].rm_eo - m[4].rm_so);
 		curr_element->array_size = strtol(array_size_str, NULL, 0);
 
 		if (curr_element->array_size == 0)
@@ -220,7 +220,7 @@ static int parse_elements(char *orig_str, struct element **elements,
 		free(type_str);
 		free(array_size_str);
 
-		str += m[3].rm_eo;
+		str += m[2].rm_eo;
 	}
 
 	ret = n_elements;
