@@ -56,7 +56,7 @@ struct type types[] = {
 	{ "__le16", 2, "%d" },
 };
 
-#define DEFAULT_RAW_FILENAME	"/sys/kernel/debug/ieee80211/phy0/wlcore/wl18xx/conf"
+#define DEFAULT_CONF_FILENAME	"/sys/kernel/debug/ieee80211/phy0/wlcore/wl18xx/conf"
 #define DEFAULT_ROOT_STRUCT	"wlcore_conf_file"
 #define MAX_INDENT		8
 #define INDENT_CHAR		"\t"
@@ -234,10 +234,12 @@ out:
 
 static void print_usage(char *executable)
 {
-	printf("Usage:\n\t%s [-s <source_file>] [-b <binary_file>] [-c <conf_binary>] [-p] [-d]\n\n"
+	printf("Usage:\n\t%s [-s <source_file>] [-b <binary_file>] [-c <conf_binary>] [-p|-d|-h]\n"
+	       "\n\tOPTIONS\n"
 	       "\t-s, --source-struct\tuse the structure specified in a C header file\n"
 	       "\t-b, --binary-struct\tspecify the binary file where the structure is defined\n"
 	       "\t-c, --configuration\tdefine the location of the binary configuration file\n"
+	       "\n\tCOMMANDS\n"
 	       "\t-p, --print-struct\tprint out the structure\n"
 	       "\t-d, --dump\t\tdump the entire configuration binary in human-readable format\n"
 	       "\t-h, --help\t\tprint this help\n"
@@ -484,12 +486,14 @@ struct option long_options[] = {
 
 int main(int argc, char **argv)
 {
-	void *header_buf, *raw_buf;
+	void *header_buf = NULL;
+	void *conf_buf = NULL;
 	char *header_filename = NULL;
 	char *binary_struct_filename = NULL;
-	char *raw_filename = NULL;
+	char *conf_filename = NULL;
 	struct structure *root_struct;
-	int c, ret;
+	int c, ret = 0;
+	char command = 0;
 
 	while (1) {
 		c = getopt_long(argc, argv, "s:b:c:pdh", long_options, NULL);
@@ -510,9 +514,22 @@ int main(int argc, char **argv)
 			       binary_struct_filename);
 			break;
 
+		case 'c':
+			conf_filename = optarg;
+			printf("Read configuration binary from file %s\n",
+			       conf_filename);
+			break;
+
 		case 'p':
 		case 'd':
-		case 'c':
+			if (command) {
+				fprintf(stderr,
+					"Only one command option is allowed, can't use -%c with -%c.\n",
+					command, c);
+				print_usage(argv[0]);
+				exit(-1);
+			}
+			command = c;
 			break;
 
 		case 'h':
@@ -525,8 +542,8 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (!raw_filename)
-		raw_filename = strdup(DEFAULT_RAW_FILENAME);
+	if (!conf_filename)
+		conf_filename = strdup(DEFAULT_CONF_FILENAME);
 
 	if (header_filename) {
 		ret = read_file(header_filename, &header_buf, 0);
@@ -545,14 +562,24 @@ int main(int argc, char **argv)
 		goto out;
 	}
 
-	ret = read_file(raw_filename, &raw_buf, root_struct->size);
-	if (ret < 0)
-		goto out;
+	switch (command) {
+	case 'p':
+		print_structs();
+		break;
 
-	dump_conf(raw_buf, root_struct);
+	case 'd':
+		/* fall through -- dump is the default if not specified */
+	default:
+		ret = read_file(conf_filename, &conf_buf, root_struct->size);
+		if (ret < 0)
+			goto out;
+
+		dump_conf(conf_buf, root_struct);
+		break;
+	}
 
 	free_file(header_buf);
-	free_file(raw_buf);
+	free_file(conf_buf);
 
 	free_structs();
 out:
