@@ -57,7 +57,7 @@ struct type types[] = {
 };
 
 #define DEFAULT_RAW_FILENAME	"/sys/kernel/debug/ieee80211/phy0/wlcore/wl18xx/conf"
-#define DEFAULT_DUMP_STRUCT	"wlcore_conf_file"
+#define DEFAULT_ROOT_STRUCT	"wlcore_conf_file"
 #define MAX_INDENT		8
 #define INDENT_CHAR		"\t"
 
@@ -395,7 +395,7 @@ static void print_structs(void)
 	}
 }
 
-static void print_struct(const char *dump_struct)
+static void print_struct(const char *root_struct)
 {
 	int i, j;
 
@@ -404,7 +404,7 @@ static void print_struct(const char *dump_struct)
 
 		curr = &structures[j];
 
-		if (!strcmp(curr->name, dump_struct)) {
+		if (!strcmp(curr->name, root_struct)) {
 			printf("struct: '%s' (size = %d)\n", curr->name,
 			       curr->size);
 
@@ -415,7 +415,7 @@ static void print_struct(const char *dump_struct)
 	}
 }
 
-static void parse_struct(void *buffer, struct structure *structure)
+static void dump_conf(void *buffer, struct structure *structure)
 {
 	int i;
 	char *pos = buffer;
@@ -488,7 +488,7 @@ int main(int argc, char **argv)
 	char *header_filename = NULL;
 	char *binary_struct_filename = NULL;
 	char *raw_filename = NULL;
-	struct structure *dump_struct;
+	struct structure *root_struct;
 	int c, ret;
 
 	while (1) {
@@ -536,20 +536,20 @@ int main(int argc, char **argv)
 		parse_header(header_buf);
 	}
 
-	dump_struct = get_struct(DEFAULT_DUMP_STRUCT);
-	if (!dump_struct) {
+	root_struct = get_struct(DEFAULT_ROOT_STRUCT);
+	if (!root_struct) {
 		fprintf(stderr,
-			"error: struct to be dumped (%s) is not defined\n",
-			DEFAULT_DUMP_STRUCT);
+			"error: root struct (%s) is not defined\n",
+			DEFAULT_ROOT_STRUCT);
 		ret = -1;
 		goto out;
 	}
 
-	ret = read_file(raw_filename, &raw_buf, dump_struct->size);
+	ret = read_file(raw_filename, &raw_buf, root_struct->size);
 	if (ret < 0)
 		goto out;
 
-	parse_struct(raw_buf, dump_struct);
+	dump_conf(raw_buf, root_struct);
 
 	free_file(header_buf);
 	free_file(raw_buf);
