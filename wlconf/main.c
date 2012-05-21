@@ -242,12 +242,13 @@ static void print_usage(char *executable)
 {
 	printf("Usage:\n\t%s [OPTIONS] [COMMANDS]\n"
 	       "\n\tOPTIONS\n"
-	       "\t-s, --source-struct\tuse the structure specified in a C header file\n"
+	       "\t-S, --source-struct\tuse the structure specified in a C header file\n"
 	       "\t-b, --binary-struct\tspecify the binary file where the structure is defined\n"
 	       "\t-i, --input-config\tlocation of the input binary configuration file\n"
 	       "\t-o, --output-config\tlocation of the input binary configuration file\n"
 	       "\n\tCOMMANDS\n"
 	       "\t-g, --get\t\tget the value of the specified element (element[.element...])\n"
+	       "\t-s, --set\t\tset the value of the specified element (element[.element...])\n"
 	       "\t-G, --generate-struct\tgenerate the binary structure file from\n"
 	       "\t\t\t\tthe specified source file\n"
 	       "\t-p, --print-struct\tprint out the structure\n"
@@ -356,6 +357,26 @@ static size_t print_data(struct element *elem, void *data, int level)
 	}
 
 	return types[elem->type].size * elem->array_size;
+}
+
+static int set_data(struct element *elem, void *buffer, void *data)
+{
+	switch (types[elem->type].size) {
+	case 1:
+		*((uint8_t *)buffer) = *((uint8_t *)data);
+		break;
+	case 2:
+		*((uint16_t *)buffer) = *((uint16_t *)data);
+		break;
+	case 4:
+		*((uint32_t *)buffer) = *((uint32_t *)data);
+		break;
+	default:
+		fprintf(stderr, "Error! Unsupported data size\n");
+		break;
+	}
+
+	return 0;
 }
 
 static size_t print_element(struct element *elem, int level, void *data)
@@ -473,6 +494,31 @@ static void free_file(void *buffer)
 	free(buffer);
 }
 
+static int write_file(const char *filename, const void *buffer, size_t size)
+{
+	FILE *file;
+	int ret;
+
+	file = fopen(filename, "w");
+	if (!file) {
+		fprintf(stderr, "Couldn't open file '%s' for writing\n",
+			filename);
+		ret = -1;
+		goto out;
+	}
+
+	if (fwrite(buffer, 1, size, file) != size) {
+		fprintf(stderr, "Failed to write file '%s'\n", filename);
+		fclose(file);
+		ret = -1;
+		goto out;
+	}
+
+	fclose(file);
+out:
+	return ret;
+}
+
 static int get_element_pos(struct structure *structure, const char *argument,
 			   struct element **element)
 {
@@ -537,6 +583,53 @@ static void get_value(void *buffer, struct structure *structure,
 
 	printf("%s = ", argument);
 	print_data(element, ((char *)buffer) + pos, 0);
+}
+
+static int set_value(void *buffer, struct structure *structure,
+		     char *argument)
+{
+	int pos, ret = 0;
+	char *split_point, *element_str, *value_str;
+	struct element *element;
+	long int value;
+
+	split_point = strchr(argument, '=');
+	if (!split_point) {
+		fprintf(stderr,
+			"--set requires the format <element>[.<element>...]=<value>");
+		ret = -1;
+		goto out;
+	}
+
+	*split_point = '\0';
+	element_str = argument;
+	value_str = split_point + 1;
+
+	pos = get_element_pos(structure, element_str, &element);
+	if (pos < 0) {
+		fprintf(stderr, "couldn't find %s\n", element_str);
+		ret = -1;
+		goto out;
+	}
+
+	if (element->array_size > 1) {
+		fprintf(stderr, "setting arrays not supported yet\n");
+		ret = -1;
+		goto out;
+	}
+
+	if (element->type >= STRUCT_BASE) {
+		fprintf(stderr,
+			"setting entire structures is not supported.\n");
+		ret = -1;
+		goto out;
+	}
+
+	value = strtol(value_str, NULL, 0);
+	ret = set_data(element, ((char *)buffer) + pos, &value);
+
+out:
+	return ret;
 }
 
 #define WRITE_VAL(val, file) {				\
@@ -706,14 +799,15 @@ out:
 	return ret;
 }
 
-#define SHORT_OPTIONS "s:b:i:o:g:G:pdh"
+#define SHORT_OPTIONS "S:s:b:i:o:g:G:pdh"
 
 struct option long_options[] = {
 	{ "binary-struct",	required_argument,	NULL,	'b' },
-	{ "source-struct",	required_argument,	NULL,	's' },
+	{ "source-struct",	required_argument,	NULL,	'S' },
 	{ "input-config",	required_argument,	NULL,	'i' },
 	{ "output-config",	required_argument,	NULL,	'o' },
 	{ "get",		required_argument,	NULL,	'g' },
+	{ "set",		required_argument,	NULL,	's' },
 	{ "generate-struct",	required_argument,	NULL,	'G' },
 	{ "print-struct",	no_argument,		NULL,	'p' },
 	{ "dump",		no_argument,		NULL,	'd' },
@@ -728,6 +822,7 @@ int main(int argc, char **argv)
 	char *header_filename = NULL;
 	char *binary_struct_filename = NULL;
 	char *input_filename = NULL;
+	char *output_filename = NULL;
 	char *command_arg = NULL;
 	struct structure *root_struct;
 	int c, ret = 0;
@@ -740,7 +835,7 @@ int main(int argc, char **argv)
 			break;
 
 		switch(c) {
-		case 's':
+		case 'S':
 			header_filename = optarg;
 			break;
 
@@ -752,8 +847,13 @@ int main(int argc, char **argv)
 			input_filename = strdup(optarg);
 			break;
 
+		case 'o':
+			output_filename = strdup(optarg);
+			break;
+
 		case 'G':
 		case 'g':
+		case 's':
 			command_arg = optarg;
 			/* Fall through */
 		case 'p':
@@ -780,6 +880,9 @@ int main(int argc, char **argv)
 
 	if (!input_filename)
 		input_filename = strdup(DEFAULT_INPUT_FILENAME);
+
+	if (!output_filename)
+		output_filename = strdup(DEFAULT_OUTPUT_FILENAME);
 
 	if (header_filename && binary_struct_filename) {
 		fprintf(stderr,
@@ -814,12 +917,6 @@ int main(int argc, char **argv)
 
 	switch (command) {
 	case 'G':
-		if (binary_struct_filename) {
-			fprintf(stderr, "Invalid option -b with this command\n");
-			ret = -1;
-			break;
-		}
-
 		if (!header_buf) {
 			fprintf(stderr, "Source struct file must be specified.\n");
 			ret = -1;
@@ -835,6 +932,21 @@ int main(int argc, char **argv)
 			goto out;
 
 		get_value(conf_buf, root_struct, command_arg);
+		break;
+
+	case 's':
+		ret = read_file(input_filename, &conf_buf, root_struct->size);
+		if (ret < 0)
+			goto out;
+
+		ret = set_value(conf_buf, root_struct, command_arg);
+		if (ret < 0)
+			goto out;
+
+		ret = write_file(output_filename, conf_buf, root_struct->size);
+		if (ret < 0)
+			goto out;
+
 		break;
 
 	case 'p':
