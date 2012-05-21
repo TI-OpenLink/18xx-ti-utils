@@ -245,6 +245,8 @@ static void print_usage(char *executable)
 	       "\t-c, --configuration\tdefine the location of the binary configuration file\n"
 	       "\n\tCOMMANDS\n"
 	       "\t-g, --get\t\tget the value of the specified element (element[.element...])\n"
+	       "\t-G, --generate-struct\tgenerate the binary structure file from\n"
+	       "\t\t\t\tthe specified source file\n"
 	       "\t-p, --print-struct\tprint out the structure\n"
 	       "\t-d, --dump\t\tdump the entire configuration binary in human-readable format\n"
 	       "\t-h, --help\t\tprint this help\n"
@@ -533,11 +535,76 @@ static void get_value(void *buffer, struct structure *structure,
 	print_data(element, ((char *)buffer) + pos, 0);
 }
 
+#define WRITE_VAL(val, file) {						\
+		fwrite(&val, 1, sizeof(val), file);			\
+	}
+
+static int write_element(FILE *file, struct element *element)
+{
+	size_t name_len = strlen(element->name);
+
+	WRITE_VAL(name_len, file);
+	fwrite(element->name, 1, name_len, file);
+	WRITE_VAL(element->type, file);
+	WRITE_VAL(element->array_size, file);
+	WRITE_VAL(element->position, file);
+
+	return 0;
+}
+
+static int write_struct(FILE *file, struct structure *structure)
+{
+	size_t name_len = strlen(structure->name);
+	int i, ret = 0;
+
+	WRITE_VAL(name_len, file);
+	fwrite(structure->name, 1, name_len, file);
+	WRITE_VAL(structure->n_elements, file);
+	WRITE_VAL(structure->size, file);
+
+	for (i = 0; i < structure->n_elements; i++) {
+		ret = write_element(file, &structure->elements[i]);
+		if (ret < 0)
+			break;
+	}
+
+	return ret;
+}
+
+static int generate_struct(const char *filename)
+{
+	FILE *file;
+	int i, ret = 0;
+
+	file = fopen(filename, "w");
+	if (!file) {
+		fprintf(stderr, "Couldn't open file '%s' for writing\n",
+			filename);
+		ret = -1;
+		goto out;
+	}
+
+	WRITE_VAL(n_structs, file);
+
+	for (i = 0; i < n_structs; i++) {
+		ret = write_struct(file, &structures[i]);
+		if (ret < 0)
+			break;
+	}
+
+	fclose(file);
+out:
+	return ret;
+}
+
+#define SHORT_OPTIONS "s:b:c:g:G:pdh"
+
 struct option long_options[] = {
 	{ "binary-struct",	required_argument,	NULL,	'b' },
 	{ "source-struct",	required_argument,	NULL,	's' },
 	{ "configuration",	required_argument,	NULL,	'c' },
 	{ "get",		required_argument,	NULL,	'g' },
+	{ "generate-struct",	required_argument,	NULL,	'G' },
 	{ "print-struct",	no_argument,		NULL,	'p' },
 	{ "dump",		no_argument,		NULL,	'd' },
 	{ "help",		no_argument,		NULL,	'h' },
@@ -557,7 +624,7 @@ int main(int argc, char **argv)
 	char command = 0;
 
 	while (1) {
-		c = getopt_long(argc, argv, "s:b:c:g:pdh", long_options, NULL);
+		c = getopt_long(argc, argv, SHORT_OPTIONS, long_options, NULL);
 
 		if (c < 0)
 			break;
@@ -581,6 +648,7 @@ int main(int argc, char **argv)
 			       conf_filename);
 			break;
 
+		case 'G':
 		case 'g':
 			command_arg = optarg;
 			/* Fall through */
@@ -627,6 +695,22 @@ int main(int argc, char **argv)
 	}
 
 	switch (command) {
+	case 'G':
+		if (binary_struct_filename) {
+			fprintf(stderr, "Invalid option -b with this command\n");
+			ret = -1;
+			break;
+		}
+
+		if (!header_buf) {
+			fprintf(stderr, "Source struct file must be specified.\n");
+			ret = -1;
+			break;
+		}
+
+		ret = generate_struct(command_arg);
+		break;
+
 	case 'g':
 		ret = read_file(conf_filename, &conf_buf, root_struct->size);
 		if (ret < 0)
