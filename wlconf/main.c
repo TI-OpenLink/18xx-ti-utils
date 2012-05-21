@@ -57,8 +57,9 @@ struct type types[] = {
 	{ "__le16", 2, "%d" },
 };
 
-#define DEFAULT_CONF_FILENAME	"/sys/kernel/debug/ieee80211/phy0/wlcore/wl18xx/conf"
-#define DEFAULT_BIN_FILENAME	"conf.bin"
+#define DEFAULT_INPUT_FILENAME	"/sys/kernel/debug/ieee80211/phy0/wlcore/wl18xx/conf"
+#define DEFAULT_OUTPUT_FILENAME	"wl18xx-conf.bin"
+#define DEFAULT_BIN_FILENAME	"struct.bin"
 #define DEFAULT_ROOT_STRUCT	"wlcore_conf_file"
 #define MAX_INDENT		8
 #define INDENT_CHAR		"\t"
@@ -243,7 +244,8 @@ static void print_usage(char *executable)
 	       "\n\tOPTIONS\n"
 	       "\t-s, --source-struct\tuse the structure specified in a C header file\n"
 	       "\t-b, --binary-struct\tspecify the binary file where the structure is defined\n"
-	       "\t-c, --configuration\tdefine the location of the binary configuration file\n"
+	       "\t-i, --input-config\tlocation of the input binary configuration file\n"
+	       "\t-o, --output-config\tlocation of the input binary configuration file\n"
 	       "\n\tCOMMANDS\n"
 	       "\t-g, --get\t\tget the value of the specified element (element[.element...])\n"
 	       "\t-G, --generate-struct\tgenerate the binary structure file from\n"
@@ -704,12 +706,13 @@ out:
 	return ret;
 }
 
-#define SHORT_OPTIONS "s:b:c:g:G:pdh"
+#define SHORT_OPTIONS "s:b:i:o:g:G:pdh"
 
 struct option long_options[] = {
 	{ "binary-struct",	required_argument,	NULL,	'b' },
 	{ "source-struct",	required_argument,	NULL,	's' },
-	{ "configuration",	required_argument,	NULL,	'c' },
+	{ "input-config",	required_argument,	NULL,	'i' },
+	{ "output-config",	required_argument,	NULL,	'o' },
 	{ "get",		required_argument,	NULL,	'g' },
 	{ "generate-struct",	required_argument,	NULL,	'G' },
 	{ "print-struct",	no_argument,		NULL,	'p' },
@@ -724,7 +727,7 @@ int main(int argc, char **argv)
 	void *conf_buf = NULL;
 	char *header_filename = NULL;
 	char *binary_struct_filename = NULL;
-	char *conf_filename = NULL;
+	char *input_filename = NULL;
 	char *command_arg = NULL;
 	struct structure *root_struct;
 	int c, ret = 0;
@@ -745,8 +748,8 @@ int main(int argc, char **argv)
 			binary_struct_filename = strdup(optarg);
 			break;
 
-		case 'c':
-			conf_filename = strdup(optarg);
+		case 'i':
+			input_filename = strdup(optarg);
 			break;
 
 		case 'G':
@@ -775,8 +778,8 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (!conf_filename)
-		conf_filename = strdup(DEFAULT_CONF_FILENAME);
+	if (!input_filename)
+		input_filename = strdup(DEFAULT_INPUT_FILENAME);
 
 	if (header_filename && binary_struct_filename) {
 		fprintf(stderr,
@@ -827,7 +830,7 @@ int main(int argc, char **argv)
 		break;
 
 	case 'g':
-		ret = read_file(conf_filename, &conf_buf, root_struct->size);
+		ret = read_file(input_filename, &conf_buf, root_struct->size);
 		if (ret < 0)
 			goto out;
 
@@ -841,7 +844,7 @@ int main(int argc, char **argv)
 	case 'd':
 		/* fall through -- dump is the default if not specified */
 	default:
-		ret = read_file(conf_filename, &conf_buf, root_struct->size);
+		ret = read_file(input_filename, &conf_buf, root_struct->size);
 		if (ret < 0)
 			goto out;
 
@@ -854,7 +857,7 @@ int main(int argc, char **argv)
 
 	free_structs();
 out:
-	free(conf_filename);
+	free(input_filename);
 	free(binary_struct_filename);
 
 	exit(ret);
