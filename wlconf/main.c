@@ -58,6 +58,7 @@ struct type types[] = {
 };
 
 #define DEFAULT_CONF_FILENAME	"/sys/kernel/debug/ieee80211/phy0/wlcore/wl18xx/conf"
+#define DEFAULT_BIN_FILENAME	"conf.bin"
 #define DEFAULT_ROOT_STRUCT	"wlcore_conf_file"
 #define MAX_INDENT		8
 #define INDENT_CHAR		"\t"
@@ -284,7 +285,8 @@ static int parse_header(const char *buffer)
 		if (regexec(&r, str, 4, m, 0))
 			break;
 
-		structures = realloc(structures, ++n_structs * sizeof(*structures));
+		structures = realloc(structures, ++n_structs *
+				     sizeof(struct structure));
 		if (!structures) {
 			ret = -1;
 			goto out_free;
@@ -535,8 +537,12 @@ static void get_value(void *buffer, struct structure *structure,
 	print_data(element, ((char *)buffer) + pos, 0);
 }
 
-#define WRITE_VAL(val, file) {						\
-		fwrite(&val, 1, sizeof(val), file);			\
+#define WRITE_VAL(val, file) {				\
+		fwrite(&val, 1, sizeof(val), file);	\
+	}
+
+#define READ_VAL(val, file) {				\
+		fread(&val, 1, sizeof(val), file);	\
 	}
 
 static int write_element(FILE *file, struct element *element)
@@ -597,6 +603,107 @@ out:
 	return ret;
 }
 
+static int read_element(FILE *file, struct element *element)
+{
+	size_t name_len;
+	int ret = 0;
+
+	READ_VAL(name_len, file);
+
+	element->name = malloc(name_len + 1);
+	if (!element->name) {
+		fprintf(stderr, "Couldn't allocate enough memory (%d)\n",
+			name_len);
+		ret = -1;
+		goto out;
+	}
+
+	fread(element->name, 1, name_len, file);
+	element->name[name_len] = '\0';
+
+	READ_VAL(element->type, file);
+	READ_VAL(element->array_size, file);
+	READ_VAL(element->position, file);
+
+out:
+	return ret;
+}
+
+static int read_struct(FILE *file, struct structure *structure)
+{
+	size_t name_len;
+	int i, ret = 0;
+
+	READ_VAL(name_len, file);
+
+	structure->name = malloc(name_len + 1);
+	if (!structure->name) {
+		fprintf(stderr, "Couldn't allocate enough memory (%d)\n",
+			name_len);
+		ret = -1;
+		goto out;
+	}
+
+	fread(structure->name, 1, name_len, file);
+	structure->name[name_len] = '\0';
+
+	READ_VAL(structure->n_elements, file);
+	READ_VAL(structure->size, file);
+
+	structure->elements = malloc(structure->n_elements *
+				     sizeof(struct element));
+	if (!structure->elements) {
+		fprintf(stderr, "Couldn't allocate enough memory (%d)\n",
+			structure->n_elements * sizeof(struct element));
+		ret = -1;
+		goto out;
+	}
+
+	for (i = 0; i < structure->n_elements; i++) {
+		ret = read_element(file, &structure->elements[i]);
+		if (ret < 0)
+			break;
+	}
+
+out:
+	return ret;
+}
+
+static int read_binary_struct(const char *filename)
+{
+	FILE *file;
+	int i, ret = 0;
+
+	file = fopen(filename, "r");
+	if (!file) {
+		fprintf(stderr, "Couldn't open file '%s' for reading\n",
+			filename);
+		ret = -1;
+		goto out;
+	}
+
+	READ_VAL(n_structs, file);
+
+	structures = malloc(n_structs * sizeof(struct structure));
+	if (!structures) {
+		fprintf(stderr, "Couldn't allocate enough memory (%d)\n",
+			n_structs * sizeof(struct structure));
+		ret = -1;
+		goto out_close;
+	}
+
+	for (i = 0; i < n_structs; i++) {
+		ret = read_struct(file, &structures[i]);
+		if (ret < 0)
+			break;
+	}
+
+out_close:
+	fclose(file);
+out:
+	return ret;
+}
+
 #define SHORT_OPTIONS "s:b:c:g:G:pdh"
 
 struct option long_options[] = {
@@ -632,20 +739,14 @@ int main(int argc, char **argv)
 		switch(c) {
 		case 's':
 			header_filename = optarg;
-			printf("Read struct from header file %s\n",
-			       header_filename);
 			break;
 
 		case 'b':
-			binary_struct_filename = optarg;
-			printf("Read struct from binary file %s\n",
-			       binary_struct_filename);
+			binary_struct_filename = strdup(optarg);
 			break;
 
 		case 'c':
-			conf_filename = optarg;
-			printf("Read configuration binary from file %s\n",
-			       conf_filename);
+			conf_filename = strdup(optarg);
 			break;
 
 		case 'G':
@@ -676,6 +777,20 @@ int main(int argc, char **argv)
 
 	if (!conf_filename)
 		conf_filename = strdup(DEFAULT_CONF_FILENAME);
+
+	if (header_filename && binary_struct_filename) {
+		fprintf(stderr,
+			"Can't specify both source struct and binary struct\n");
+		ret = -1;
+		goto out;
+	}
+
+	if (!header_filename && !binary_struct_filename) {
+		binary_struct_filename = strdup(DEFAULT_BIN_FILENAME);
+		ret = read_binary_struct(binary_struct_filename);
+		if (ret < 0)
+			goto out;
+	}
 
 	if (header_filename) {
 		ret = read_file(header_filename, &header_buf, 0);
@@ -739,5 +854,8 @@ int main(int argc, char **argv)
 
 	free_structs();
 out:
+	free(conf_filename);
+	free(binary_struct_filename);
+
 	exit(ret);
 }
