@@ -244,6 +244,7 @@ static void print_usage(char *executable)
 	       "\t-b, --binary-struct\tspecify the binary file where the structure is defined\n"
 	       "\t-c, --configuration\tdefine the location of the binary configuration file\n"
 	       "\n\tCOMMANDS\n"
+	       "\t-g, --get\t\tget the value of the specified element\n"
 	       "\t-p, --print-struct\tprint out the structure\n"
 	       "\t-d, --dump\t\tdump the entire configuration binary in human-readable format\n"
 	       "\t-h, --help\t\tprint this help\n"
@@ -466,10 +467,77 @@ static void free_file(void *buffer)
 	free(buffer);
 }
 
+static int get_element_pos(struct structure *structure, const char *argument,
+			   struct element **element)
+{
+	int i, pos = 0;
+	struct structure *curr_struct = structure;
+	struct element *curr_element = NULL;
+	char *str, *arg = strdup(argument);
+
+	str = strtok(arg, ".");
+
+	while(str) {
+
+		for (i = 0; i < curr_struct->n_elements; i++)
+			if (!strcmp(str, curr_struct->elements[i].name)) {
+				curr_element = &curr_struct->elements[i];
+				pos += curr_element->position;
+				break;
+			}
+
+		if (i == curr_struct->n_elements) {
+			fprintf(stderr, "couldn't find element %s\n", str);
+			pos = -1;
+			goto out;
+		}
+
+		str = strtok(NULL, ".");
+		if (str && curr_element->type < STRUCT_BASE) {
+			fprintf(stderr, "element %s is not a struct\n",
+				curr_element->name);
+			pos = -1;
+			goto out;
+		}
+
+		if (str)
+			curr_struct =
+				&structures[curr_element->type - STRUCT_BASE];
+	}
+
+out:
+	*element = curr_element;
+	free(arg);
+	return pos;
+}
+
+static void get_value(void *buffer, struct structure *structure,
+		      char *argument)
+{
+	int pos;
+	struct element *element;
+
+	pos = get_element_pos(structure, argument, &element);
+	if (pos < 0) {
+		fprintf(stderr, "couldn't find %s\n", argument);
+		return;
+	}
+
+	if (element->type >= STRUCT_BASE) {
+		fprintf(stderr,
+			"getting entire structures not supported yet.\n");
+		return;
+	}
+
+	printf("%s = ", argument);
+	print_data(element, ((char *)buffer) + pos, 0);
+}
+
 struct option long_options[] = {
 	{ "binary-struct",	required_argument,	NULL,	'b' },
 	{ "source-struct",	required_argument,	NULL,	's' },
 	{ "configuration",	required_argument,	NULL,	'c' },
+	{ "get",		required_argument,	NULL,	'g' },
 	{ "print-struct",	no_argument,		NULL,	'p' },
 	{ "dump",		no_argument,		NULL,	'd' },
 	{ "help",		no_argument,		NULL,	'h' },
@@ -483,12 +551,13 @@ int main(int argc, char **argv)
 	char *header_filename = NULL;
 	char *binary_struct_filename = NULL;
 	char *conf_filename = NULL;
+	char *command_arg = NULL;
 	struct structure *root_struct;
 	int c, ret = 0;
 	char command = 0;
 
 	while (1) {
-		c = getopt_long(argc, argv, "s:b:c:pdh", long_options, NULL);
+		c = getopt_long(argc, argv, "s:b:c:g:pdh", long_options, NULL);
 
 		if (c < 0)
 			break;
@@ -512,6 +581,9 @@ int main(int argc, char **argv)
 			       conf_filename);
 			break;
 
+		case 'g':
+			command_arg = optarg;
+			/* Fall through */
 		case 'p':
 		case 'd':
 			if (command) {
@@ -555,6 +627,14 @@ int main(int argc, char **argv)
 	}
 
 	switch (command) {
+	case 'g':
+		ret = read_file(conf_filename, &conf_buf, root_struct->size);
+		if (ret < 0)
+			goto out;
+
+		get_value(conf_buf, root_struct, command_arg);
+		break;
+
 	case 'p':
 		print_structs(NULL, root_struct);
 		break;
