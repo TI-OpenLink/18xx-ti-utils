@@ -176,7 +176,7 @@ static int parse_elements(char *orig_str, struct element **elements,
 
 	while(strlen(str)) {
 		regmatch_t m[6];
-		char *type_str, *array_size_str;
+		char *type_str, *array_size_str = NULL;
 		struct element *curr_element;
 
 		if (regexec(&r, str, 6, m, 0))
@@ -194,12 +194,13 @@ static int parse_elements(char *orig_str, struct element **elements,
 		curr_element->name =
 			strndup(str + m[2].rm_so, m[2].rm_eo - m[2].rm_so);
 
-		array_size_str =
-			strndup(str + m[4].rm_so, m[4].rm_eo - m[4].rm_so);
-		curr_element->array_size = strtol(array_size_str, NULL, 0);
-
-		if (curr_element->array_size == 0)
+		if (m[4].rm_so == m[4].rm_eo) {
 			curr_element->array_size = 1;
+		} else {
+			array_size_str =
+				strndup(str + m[4].rm_so, m[4].rm_eo - m[4].rm_so);
+			curr_element->array_size = strtol(array_size_str, NULL, 0);
+		}
 
 		type_str = strndup(str + m[1].rm_so, m[1].rm_eo - m[1].rm_so);
 		curr_element->type = get_type(type_str);
