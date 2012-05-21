@@ -238,13 +238,13 @@ out:
 
 static void print_usage(char *executable)
 {
-	printf("Usage:\n\t%s [-s <source_file>] [-b <binary_file>] [-c <conf_binary>] [-p|-d|-h]\n"
+	printf("Usage:\n\t%s [OPTIONS] [COMMANDS]\n"
 	       "\n\tOPTIONS\n"
 	       "\t-s, --source-struct\tuse the structure specified in a C header file\n"
 	       "\t-b, --binary-struct\tspecify the binary file where the structure is defined\n"
 	       "\t-c, --configuration\tdefine the location of the binary configuration file\n"
 	       "\n\tCOMMANDS\n"
-	       "\t-g, --get\t\tget the value of the specified element\n"
+	       "\t-g, --get\t\tget the value of the specified element (element[.element...])\n"
 	       "\t-p, --print-struct\tprint out the structure\n"
 	       "\t-d, --dump\t\tdump the entire configuration binary in human-readable format\n"
 	       "\t-h, --help\t\tprint this help\n"
