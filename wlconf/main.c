@@ -30,6 +30,7 @@ struct element {
 	int type;
 	int array_size;
 	int *value;
+	size_t position;
 };
 
 struct structure {
@@ -193,6 +194,8 @@ static int parse_elements(char *orig_str, struct element **elements,
 
 		curr_element->name =
 			strndup(str + m[2].rm_so, m[2].rm_eo - m[2].rm_so);
+
+		curr_element->position = *size;
 
 		if (m[4].rm_so == m[4].rm_eo) {
 			curr_element->array_size = 1;
@@ -365,9 +368,10 @@ static size_t print_element(struct element *elem, int level, void *data)
 	for (i = 0; i < level; i++)
 		strncat(indent, INDENT_CHAR, sizeof(indent));
 
+	printf("%s%d\t", indent, elem->position);
+
 	if (elem->type < STRUCT_BASE) {
-		printf("%s%s %s[%d]",
-		       indent,
+		printf("%s %s[%d]",
 		       types[elem->type].name,
 		       elem->name,
 		       elem->array_size);
@@ -389,8 +393,8 @@ static size_t print_element(struct element *elem, int level, void *data)
 
 		sub = &structures[elem->type -
 				  STRUCT_BASE];
-		printf("%sstruct %s (size = %d bytes)\n", indent,
-		       sub->name, sub->size);
+		printf("struct %s %s (size = %d bytes)\n",
+		       sub->name, elem->name, sub->size);
 
 		for (j = 0; j < sub->n_elements; j++) {
 			len += print_element(&sub->elements[j],
