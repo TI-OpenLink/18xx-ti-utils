@@ -57,7 +57,7 @@ struct type types[] = {
 	{ "__le16", 2, "%d" },
 };
 
-#define DEFAULT_INPUT_FILENAME	"/sys/kernel/debug/ieee80211/phy0/wlcore/wl18xx/conf"
+#define DEFAULT_INPUT_FILENAME	"wl18xx-conf-default.bin"
 #define DEFAULT_OUTPUT_FILENAME	"wl18xx-conf.bin"
 #define DEFAULT_BIN_FILENAME	"struct.bin"
 #define DEFAULT_ROOT_STRUCT	"wlcore_conf_file"
