@@ -1,0 +1,104 @@
+wlconf - Configuration utility for TI wireless drivers
+======================================================
+
+Author: Luciano Coelho <coelho@ti.com>
+
+Copyright (C) 2012, Texas Instruments Inc.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 2 as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+USA
+
+EXAMPLES
+--------
+
+* Get the value of phy_standalone in the phy struct inside wl18xx from
+  the binary configuration file wl18xx-conf.bin in the current
+  directory:
+
+  # ./wlconf -i wl18xx-conf.bin -g wl18xx.phy.phy_standalone
+  wl18xx.phy.phy_standalone = 0x00
+
+* Set the window_size value in the hangover struct inside core, using
+  the binary at /lib/firmware/ti-connectivity/wl18xx-conf.bin as input
+  and writing the modified file into wl18xx-conf.bin in the local
+  directory (default output location):
+
+  # ./wlconf -i /lib/firmware/ti-connectivity/wl18xx-conf.bin -s core.hangover.window_size=0x20
+
+
+
+KNOWN ISSUES AND LIMITATIONS
+----------------------------
+
+* Only the first struct in an array of structs can be set;
+
+* It's not possible to set or print an entire structure at once;
+
+* The dump and print commands are buggy;
+
+* It's too cumbersome and prone to errors to let the end-users parse
+  the source header file.  Thus, a default struct.bin file with the
+  current driver configuration structure is provided.  This binary
+  should be updated here whenever the conf header files change in the
+  driver code.
+
+* The source header parser is very limited.  It doesn't do a full
+  pre-processing, but matches on regular expressions.  The format of
+  the file must be very strict;
+
+* The source header parser can't expand macros or enums.  These
+  symbols need to be translated manually and changed in the header
+  file;
+
+* The source header parser can't include other files (ie. the #include
+  statements are ignored), so it's best to copy the hw-specific header
+  (eg. wl18xx/conf.h) into the core header file (ie. wlcore/conf.h)
+  and substitute the priv[0] with the name of the top priv structure
+  (eg. wl18xx_priv_conf);
+
+
+
+TODO
+----
+
+* Allow setting values in any structure inside an array of structs;
+
+* Fix print and dump;
+
+* Add INI file parser for setting multiple values at once;
+
+* Improve type-checking in the --set command;
+
+* Allow setting all values in an array with the --set command;
+
+* Allow setting a value in a specific index of an array;
+
+* Implement a man page;
+
+* Split into separate source files;
+
+* Implement "expert-mode" or something that doesn't make it so easy
+  for end-users to mangle with the source header parsing and
+  generation of struct binaries;
+
+* Improve checking of options that are allowed with each different
+  command;
+
+* Fix some compiler warnings on x86 and make sure it works well;
+
+* Add checksum to the generated configuration binary;
+
+* Use the version, magic number from the header file;
+
+* Add option to change the root structure;
