@@ -36,6 +36,20 @@ EXAMPLES
 
   # ./wlconf -i /lib/firmware/ti-connectivity/wl18xx-conf.bin -s core.hangover.window_size=0x20
 
+* Parse an INI file and generate a configuration binary with the
+  values specified:
+
+  # ./wlconf -I example.ini
+
+
+INI FORMAT
+----------
+
+The INI file should contain one or more lines with the following syntax:
+
+<element>[.<element>...] = <value>
+
+Check the example.ini file for more details.
 
 
 KNOWN ISSUES AND LIMITATIONS
@@ -76,8 +90,6 @@ TODO
 
 * Fix print and dump;
 
-* Add INI file parser for setting multiple values at once;
-
 * Improve type-checking in the --set command;
 
 * Allow setting all values in an array with the --set command;
@@ -102,3 +114,5 @@ TODO
 * Use the version, magic number from the header file;
 
 * Add option to change the root structure;
+
+* Allow comments in the INI file;

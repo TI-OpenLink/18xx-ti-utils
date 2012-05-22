@@ -73,6 +73,9 @@ struct type types[] = {
 #define ELEMENT_PATTERN	"[\n\t\r ]*([A-Za-z0-9_]+)[\n\t\r ]+" \
 	"([a-zA-Z_][a-zA-Z0-9_]*)(\\[([0-9]+)\\])?[\n\t\r ]*;[\n\t\r ]*"
 
+#define INI_PATTERN	"^[\n\t\r ]*([A-Za-z_][A-Za-z0-9_.]*)[\n\t\r ]*=" \
+	"[\n\t\r ]*([A-Za-z0-9_]+)"
+
 #define CC_COMMENT_PATTERN	"(([^/]|[^/][^/])*)//[^\n]*\n(.*)"
 
 #define C_COMMENT_PATTERN	"(([^/]|[^/][^*])*)/\\*(([^*]|[^*][^/])*)\\*/(.*)"
@@ -251,6 +254,8 @@ static void print_usage(char *executable)
 	       "\t-s, --set\t\tset the value of the specified element (element[.element...])\n"
 	       "\t-G, --generate-struct\tgenerate the binary structure file from\n"
 	       "\t\t\t\tthe specified source file\n"
+	       "\t-I, --parse-ini\t\tparse the specified INI file and set the values accordingly\n"
+	       "\t\t\t\tin the output binary configuration file\n"
 	       "\t-p, --print-struct\tprint out the structure\n"
 	       "\t-d, --dump\t\tdump the entire configuration binary in human-readable format\n"
 	       "\t-h, --help\t\tprint this help\n"
@@ -799,7 +804,64 @@ out:
 	return ret;
 }
 
-#define SHORT_OPTIONS "S:s:b:i:o:g:G:pdh"
+static int parse_ini(void *conf_buffer, struct structure *structure,
+		     const char *buffer)
+{
+	regex_t r;
+	const char *str;
+	int ret;
+
+	ret = regcomp(&r, INI_PATTERN, REG_EXTENDED);
+	if (ret < 0)
+		goto out;
+
+	str = buffer;
+
+	while (strlen(str)) {
+		char *element_str = NULL, *value_str = NULL;
+		regmatch_t m[3];
+		struct element *element;
+		long int value;
+		int pos;
+
+		if (regexec(&r, str, 3, m, 0))
+			break;
+
+		element_str =
+			strndup(str + m[1].rm_so, m[1].rm_eo - m[1].rm_so);
+
+		value_str = strndup(str + m[2].rm_so, m[2].rm_eo - m[2].rm_so);
+
+		pos = get_element_pos(structure, element_str, &element);
+		if (pos < 0) {
+			fprintf(stderr, "couldn't find %s\n", element_str);
+			ret = -1;
+		} else if (element->array_size > 1) {
+			fprintf(stderr, "setting arrays not supported yet\n");
+			ret = -1;
+		} else if (element->type >= STRUCT_BASE) {
+			fprintf(stderr,
+				"setting entire structures is not supported.\n");
+			ret = -1;
+		} else {
+			value = strtol(value_str, NULL, 0);
+			ret = set_data(element, ((char *)conf_buffer) + pos, &value);
+		}
+
+		free(element_str);
+		element_str = NULL;
+		free(value_str);
+		value_str = NULL;
+
+		str += m[2].rm_eo;
+	}
+
+	regfree(&r);
+out:
+	return ret;
+}
+
+#define SHORT_OPTIONS "S:s:b:i:o:g:G:I:pdh"
 
 struct option long_options[] = {
 	{ "binary-struct",	required_argument,	NULL,	'b' },
@@ -809,6 +871,7 @@ struct option long_options[] = {
 	{ "get",		required_argument,	NULL,	'g' },
 	{ "set",		required_argument,	NULL,	's' },
 	{ "generate-struct",	required_argument,	NULL,	'G' },
+	{ "parse-ini",		required_argument,	NULL,	'I' },
 	{ "print-struct",	no_argument,		NULL,	'p' },
 	{ "dump",		no_argument,		NULL,	'd' },
 	{ "help",		no_argument,		NULL,	'h' },
@@ -819,6 +882,7 @@ int main(int argc, char **argv)
 {
 	void *header_buf = NULL;
 	void *conf_buf = NULL;
+	void *ini_buf = NULL;
 	char *header_filename = NULL;
 	char *binary_struct_filename = NULL;
 	char *input_filename = NULL;
@@ -854,6 +918,7 @@ int main(int argc, char **argv)
 		case 'G':
 		case 'g':
 		case 's':
+		case 'I':
 			command_arg = optarg;
 			/* Fall through */
 		case 'p':
@@ -940,6 +1005,25 @@ int main(int argc, char **argv)
 			goto out;
 
 		ret = set_value(conf_buf, root_struct, command_arg);
+		if (ret < 0)
+			goto out;
+
+		ret = write_file(output_filename, conf_buf, root_struct->size);
+		if (ret < 0)
+			goto out;
+
+		break;
+
+	case 'I':
+		ret = read_file(input_filename, &conf_buf, root_struct->size);
+		if (ret < 0)
+			goto out;
+
+		ret = read_file(command_arg, &ini_buf, 0);
+		if (ret < 0)
+			goto out;
+
+		ret = parse_ini(conf_buf, root_struct, ini_buf);
 		if (ret < 0)
 			goto out;
 
