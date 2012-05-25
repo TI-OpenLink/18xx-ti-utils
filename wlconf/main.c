@@ -61,6 +61,11 @@ struct type types[] = {
 #define DEFAULT_OUTPUT_FILENAME	"wl18xx-conf.bin"
 #define DEFAULT_BIN_FILENAME	"struct.bin"
 #define DEFAULT_ROOT_STRUCT	"wlcore_conf_file"
+#define DEFAULT_MAGIC_SYMBOL	"WL18XX_CONF_MAGIC"
+#define DEFAULT_VERSION_SYMBOL	"WL18XX_CONF_VERSION"
+#define DEFAULT_MAGIC_ELEMENT	"header.magic"
+#define DEFAULT_VERSION_ELEMENT	"header.version"
+#define DEFAULT_CHKSUM_ELEMENT	"header.checksum"
 #define MAX_INDENT		8
 #define INDENT_CHAR		"\t"
 
@@ -80,8 +85,18 @@ struct type types[] = {
 
 #define C_COMMENT_PATTERN	"(([^/]|[^/][^*])*)/\\*(([^*]|[^*][^/])*)\\*/(.*)"
 
+
+/* we only match WL12XX and WL18XX magic */
+#define DEFINE_PATTERN	"#define[\n\t\r ]+([A-Za-z_][A-Za-z0-9_]*)"	\
+	"[\n\t\r ]+(0x[0-9A-Fa-f]+)"
+
+
 static struct structure *structures = NULL;
 static int n_structs = 0;
+
+static int magic	= 0;
+static int version	= 0;
+static int checksum	= 0;
 
 static int get_type(char *type_str)
 {
@@ -103,7 +118,7 @@ static int get_type(char *type_str)
 	return -1;
 }
 
-static char *remove_comments(char *orig_str)
+static char *remove_comments(const char *orig_str)
 {
 	regex_t r;
 	char *new_str = NULL;
@@ -159,6 +174,55 @@ static struct structure *get_struct(const char *structure)
 	return NULL;
 }
 
+static int parse_define(const char *buffer, char *symbol, int *value)
+{
+	regex_t r;
+	int ret;
+	const char *str;
+
+	ret = regcomp(&r, DEFINE_PATTERN, REG_EXTENDED);
+	if (ret < 0)
+		goto out;
+
+	str = buffer;
+
+	while (strlen(str)) {
+		regmatch_t m[3];
+		char *symbol_str, *value_str = NULL;
+
+		if (regexec(&r, str, 3, m, 0))
+			break;
+
+		symbol_str =
+			strndup(str + m[1].rm_so, m[1].rm_eo - m[1].rm_so);
+
+		value_str = strndup(str + m[2].rm_so, m[2].rm_eo - m[2].rm_so);
+
+		if (!strcmp(symbol, symbol_str)) {
+			if (*value == 0) {
+				*value = strtol(value_str, NULL, 0);
+				printf("symbol %s found %s (%08x)\n",
+				       symbol, value_str, *value);
+			} else {
+				fprintf(stderr, "symbol %s redefined\n",
+					symbol_str);
+				ret = -1;
+			}
+		}
+
+		free(symbol_str);
+		symbol_str = NULL;
+		free(value_str);
+		value_str = NULL;
+
+		str += m[2].rm_eo;
+	};
+
+out:
+	regfree(&r);
+	return ret;
+}
+
 static int parse_elements(char *orig_str, struct element **elements,
 			  size_t *size)
 {
@@ -180,7 +244,7 @@ static int parse_elements(char *orig_str, struct element **elements,
 
 	str = clean_str;
 
-	while(strlen(str)) {
+	while (strlen(str)) {
 		regmatch_t m[6];
 		char *type_str, *array_size_str = NULL;
 		struct element *curr_element;
@@ -278,6 +342,14 @@ static int parse_header(const char *buffer)
 	regex_t r;
 	const char *str;
 	int ret;
+
+	ret = parse_define(buffer, DEFAULT_MAGIC_SYMBOL, &magic);
+	if (ret < 0)
+		goto out;
+
+	ret = parse_define(buffer, DEFAULT_VERSION_SYMBOL, &version);
+	if (ret < 0)
+		goto out;
 
 	ret = regcomp(&r, STRUCT_PATTERN, REG_EXTENDED);
 	if (ret < 0)
@@ -690,6 +762,9 @@ static int generate_struct(const char *filename)
 		goto out;
 	}
 
+	WRITE_VAL(magic, file);
+	WRITE_VAL(version, file);
+	WRITE_VAL(checksum, file);
 	WRITE_VAL(n_structs, file);
 
 	for (i = 0; i < n_structs; i++) {
@@ -782,6 +857,9 @@ static int read_binary_struct(const char *filename)
 		goto out;
 	}
 
+	READ_VAL(magic, file);
+	READ_VAL(version, file);
+	READ_VAL(checksum, file);
 	READ_VAL(n_structs, file);
 
 	structures = malloc(n_structs * sizeof(struct structure));
@@ -968,7 +1046,9 @@ int main(int argc, char **argv)
 		if (ret < 0)
 			goto out;
 
-		parse_header(header_buf);
+		ret = parse_header(header_buf);
+		if (ret < 0)
+			goto out;
 	}
 
 	root_struct = get_struct(DEFAULT_ROOT_STRUCT);
