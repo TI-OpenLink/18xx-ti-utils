@@ -882,6 +882,78 @@ out:
 	return ret;
 }
 
+static int get_value_int(void *buffer, struct structure *structure,
+			 int *value, char *element_str)
+{
+	int pos, ret = 0;
+	struct element *element;
+
+	pos = get_element_pos(structure, element_str, &element);
+	if (pos < 0) {
+		fprintf(stderr, "couldn't find %s\n", element_str);
+		ret = pos;
+		goto out;
+	}
+
+	if ((element->type != get_type("u32")) &&
+	    (element->type != get_type("__le32"))) {
+		fprintf(stderr,
+			"element %s has invalid type (expected u32 or le32)\n",
+			element_str);
+		ret = -1;
+		goto out;
+	}
+
+	*value = *(int *) (((char *)buffer) + pos);
+
+out:
+	return ret;
+}
+
+static int read_input(const char *filename, void **buffer,
+		      struct structure *structure)
+{
+	int ret;
+	int input_magic, input_version, input_checksum;
+
+	ret = read_file(filename, buffer, structure->size);
+	if (ret < 0)
+		goto out;
+
+	ret = get_value_int(*buffer, structure, &input_magic,
+			    DEFAULT_MAGIC_ELEMENT);
+	if (ret < 0)
+		goto out;
+
+	ret = get_value_int(*buffer, structure, &input_version,
+			    DEFAULT_VERSION_ELEMENT);
+	if (ret < 0)
+		goto out;
+
+	ret = get_value_int(*buffer, structure, &input_checksum,
+			    DEFAULT_CHKSUM_ELEMENT);
+	if (ret < 0)
+		goto out;
+
+	if ((magic != input_magic) ||
+	    (version != input_version) ||
+	    (checksum != input_checksum)) {
+		fprintf(stderr, "incompatible binary file\n");
+		fprintf(stderr,
+			"expected 0x%08x 0x%08x 0x%08x\n"
+			"got 0x%08x 0x%08x 0x%08x\n",
+			magic, version, checksum,
+			input_magic, input_version, input_checksum);
+
+
+		ret = -1;
+		goto out;
+	}
+
+out:
+	return ret;
+}
+
 static int parse_ini(void *conf_buffer, struct structure *structure,
 		     const char *buffer)
 {
@@ -1072,7 +1144,7 @@ int main(int argc, char **argv)
 		break;
 
 	case 'g':
-		ret = read_file(input_filename, &conf_buf, root_struct->size);
+		ret = read_input(input_filename, &conf_buf, root_struct);
 		if (ret < 0)
 			goto out;
 
@@ -1080,7 +1152,7 @@ int main(int argc, char **argv)
 		break;
 
 	case 's':
-		ret = read_file(input_filename, &conf_buf, root_struct->size);
+		ret = read_input(input_filename, &conf_buf, root_struct);
 		if (ret < 0)
 			goto out;
 
@@ -1095,7 +1167,7 @@ int main(int argc, char **argv)
 		break;
 
 	case 'I':
-		ret = read_file(input_filename, &conf_buf, root_struct->size);
+		ret = read_input(input_filename, &conf_buf, root_struct);
 		if (ret < 0)
 			goto out;
 
@@ -1120,7 +1192,7 @@ int main(int argc, char **argv)
 	case 'd':
 		/* fall through -- dump is the default if not specified */
 	default:
-		ret = read_file(input_filename, &conf_buf, root_struct->size);
+		ret = read_input(input_filename, &conf_buf, root_struct);
 		if (ret < 0)
 			goto out;
 

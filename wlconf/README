@@ -111,8 +111,8 @@ TODO
 
 * Add checksum to the generated configuration binary;
 
-* Use the version, magic number from the header file;
-
 * Add option to change the root structure;
 
 * Allow comments in the INI file;
+
+* Handle endianess and different type sizes for different archs;
