@@ -25,10 +25,12 @@ USA
 The binary file contains 3 values that are used for validity and
 corruption checks: magic, version and checksum.
 
-1.1. Conf file with valid magic number
+1.1. Conf file with valid header values
 
      Make sure the input file (test-1.1-conf.bin) contains
-     0x10e100ca in its first 4 bytes and run:
+     0x10e100ca in its first 4 bytes, then 4 bytes with the correct
+     version number for the current struct (eg. 0x00010001), then a
+     correctly calculated CRC32 checksum and run:
 
 	./wlconf -g header.magic -i tests/test-1.1-conf.bin
 
@@ -38,9 +40,44 @@ corruption checks: magic, version and checksum.
 1.2 Conf file with invalid magic number
 
      Make sure the input file (test-1.2-conf.bin) contains
-     0xffffffff in its first 4 bytes and run:
+     0xffffffff at bytes 0-3 and run:
 
 	./wlconf -g header.magic -i tests/test-1.2-conf.bin
 
      Expected result: the tool should reject the file and print an
      error.
+
+1.3 Conf file with invalid version number
+
+     Make sure the input file (test-1.2-conf.bin) contains
+     0xffffffff at bytes 4-7 and run:
+
+	./wlconf -g header.magic -i tests/test-1.3-conf.bin
+
+     Expected result: the tool should reject the file and print an
+     error.
+
+1.4 Conf file with checksum
+
+     Make sure the input file (test-1.2-conf.bin) contains
+     0xffffffff at bytes 8-11 and run:
+
+	./wlconf -g header.magic -i tests/test-1.4-conf.bin
+
+     Expected result: the tool should reject the file and print an
+     error.
+
+1.5 Generate correct checksum when changing a value
+
+    Run the following command (where new_value is something different
+    the result from the previous command):
+
+	./wlconf -s wl18xx.phy.rdl=0xff -i tests/test-1.5-conf.bin -o tests/result-1.5-conf.bin
+
+    Then read the value with:
+
+	./wlconf -g wl18xx.phy.rdl -i tests/result-1.5-conf.bin
+
+    Expected result: the tool should be able to read the new value
+    (0xff) without reporting binary corruption. (Note: this test
+    depends on the success of test 1.4).
