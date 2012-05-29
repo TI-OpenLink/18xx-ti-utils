@@ -100,6 +100,7 @@ static int magic		= 0;
 static int version		= 0;
 static int checksum		= 0;
 static int struct_chksum	= 0;
+static int ignore_checksum	= 0;
 
 static int get_type(char *type_str)
 {
@@ -316,6 +317,7 @@ static void print_usage(char *executable)
 	       "\t-b, --binary-struct\tspecify the binary file where the structure is defined\n"
 	       "\t-i, --input-config\tlocation of the input binary configuration file\n"
 	       "\t-o, --output-config\tlocation of the input binary configuration file\n"
+	       "\t-X, --ignore-checksum\tignore file checksum error detection\n"
 	       "\n\tCOMMANDS\n"
 	       "\t-g, --get\t\tget the value of the specified element (element[.element...])\n"
 	       "\t-s, --set\t\tset the value of the specified element (element[.element...])\n"
@@ -974,19 +976,23 @@ static int read_input(const char *filename, void **buffer,
 	checksum = calc_crc32(*buffer, structure->size);
 
 	if ((magic != input_magic) ||
-	    (version != input_version) ||
-	    (checksum != input_checksum)) {
-		fprintf(stderr, "incompatible or corrupted binary file\n");
-		fprintf(stderr,
-			"expected 0x%08x 0x%08x 0x%08x\n"
-			"got 0x%08x 0x%08x 0x%08x\n",
-			magic, version, checksum,
-			input_magic, input_version, input_checksum);
-
-
+	    (version != input_version)) {
+		fprintf(stderr, "incompatible binary file\n"
+			"expected 0x%08x 0x%08x\n"
+			"got 0x%08x 0x%08x\n",
+			magic, version, input_magic, input_version);
 		ret = -1;
 		goto out;
 	}
+
+	if (!ignore_checksum && (checksum != input_checksum)) {
+		fprintf(stderr, "corrupted binary file\n"
+			"expected checksum 0x%08x got 0x%08x\n",
+			checksum, input_checksum);
+		ret = -1;
+		goto out;
+	}
+
 
 out:
 	return ret;
@@ -1049,13 +1055,14 @@ out:
 	return ret;
 }
 
-#define SHORT_OPTIONS "S:s:b:i:o:g:G:I:pdh"
+#define SHORT_OPTIONS "S:s:b:i:o:g:G:I:pdhX"
 
 struct option long_options[] = {
 	{ "binary-struct",	required_argument,	NULL,	'b' },
 	{ "source-struct",	required_argument,	NULL,	'S' },
 	{ "input-config",	required_argument,	NULL,	'i' },
 	{ "output-config",	required_argument,	NULL,	'o' },
+	{ "ignore-checksum",	no_argument,		NULL,	'X' },
 	{ "get",		required_argument,	NULL,	'g' },
 	{ "set",		required_argument,	NULL,	's' },
 	{ "generate-struct",	required_argument,	NULL,	'G' },
@@ -1101,6 +1108,10 @@ int main(int argc, char **argv)
 
 		case 'o':
 			output_filename = strdup(optarg);
+			break;
+
+		case 'X':
+			ignore_checksum = 1;
 			break;
 
 		case 'G':
