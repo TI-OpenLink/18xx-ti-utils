@@ -668,7 +668,7 @@ static int set_value(void *buffer, struct structure *structure,
 	int pos, ret = 0;
 	char *split_point, *element_str, *value_str;
 	struct element *element;
-	long int value;
+	uint32_t value;
 
 	split_point = strchr(argument, '=');
 	if (!split_point) {
@@ -702,7 +702,7 @@ static int set_value(void *buffer, struct structure *structure,
 		goto out;
 	}
 
-	value = strtol(value_str, NULL, 0);
+	value = strtoul(value_str, NULL, 0);
 	ret = set_data(element, ((char *)buffer) + pos, &value);
 
 out:
