@@ -81,7 +81,13 @@ KNOWN ISSUES AND LIMITATIONS
   and substitute the priv[0] with the name of the top priv structure
   (eg. wl18xx_priv_conf);
 
+* Trying to use --get to read the header.checksum value will always
+  return 0;
 
+* Trying to use --set to write the header.checksum value will not
+  work, as the checksum will be recalculated with the new value
+  (instead of 0) before writing, generating a conf binary with an
+  invalid checksum.
 
 TODO
 ----
@@ -116,3 +122,8 @@ TODO
 * Allow comments in the INI file;
 
 * Handle endianess and different type sizes for different archs;
+
+* Validate the checksum of the struct binary;
+
+* Prevent any of the special elements (such as header.magic,
+  header.version and header.checksum) from being read or set.

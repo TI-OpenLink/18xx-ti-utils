@@ -25,6 +25,8 @@
 #include <sys/stat.h>
 #include <getopt.h>
 
+#include "crc32.h"
+
 struct element {
 	char *name;
 	int type;
@@ -94,9 +96,10 @@ struct type types[] = {
 static struct structure *structures = NULL;
 static int n_structs = 0;
 
-static int magic	= 0;
-static int version	= 0;
-static int checksum	= 0;
+static int magic		= 0;
+static int version		= 0;
+static int checksum		= 0;
+static int struct_chksum	= 0;
 
 static int get_type(char *type_str)
 {
@@ -764,7 +767,7 @@ static int generate_struct(const char *filename)
 
 	WRITE_VAL(magic, file);
 	WRITE_VAL(version, file);
-	WRITE_VAL(checksum, file);
+	WRITE_VAL(struct_chksum, file);
 	WRITE_VAL(n_structs, file);
 
 	for (i = 0; i < n_structs; i++) {
@@ -859,7 +862,7 @@ static int read_binary_struct(const char *filename)
 
 	READ_VAL(magic, file);
 	READ_VAL(version, file);
-	READ_VAL(checksum, file);
+	READ_VAL(struct_chksum, file);
 	READ_VAL(n_structs, file);
 
 	structures = malloc(n_structs * sizeof(struct structure));
@@ -910,6 +913,34 @@ out:
 	return ret;
 }
 
+static int set_value_int(void *buffer, struct structure *structure,
+			 int value, char *element_str)
+{
+	int pos, ret = 0;
+	struct element *element;
+
+	pos = get_element_pos(structure, element_str, &element);
+	if (pos < 0) {
+		fprintf(stderr, "couldn't find %s\n", element_str);
+		ret = pos;
+		goto out;
+	}
+
+	if ((element->type != get_type("u32")) &&
+	    (element->type != get_type("__le32"))) {
+		fprintf(stderr,
+			"element %s has invalid type (expected u32 or le32)\n",
+			element_str);
+		ret = -1;
+		goto out;
+	}
+
+	*(int *) (((char *)buffer) + pos) = value;
+
+out:
+	return ret;
+}
+
 static int read_input(const char *filename, void **buffer,
 		      struct structure *structure)
 {
@@ -935,10 +966,17 @@ static int read_input(const char *filename, void **buffer,
 	if (ret < 0)
 		goto out;
 
+	/* after reading the checksum, set it to 0 for checksum calculation */
+	ret = set_value_int(*buffer, structure, 0, DEFAULT_CHKSUM_ELEMENT);
+	if (ret < 0)
+		goto out;
+
+	checksum = calc_crc32(*buffer, structure->size);
+
 	if ((magic != input_magic) ||
 	    (version != input_version) ||
 	    (checksum != input_checksum)) {
-		fprintf(stderr, "incompatible binary file\n");
+		fprintf(stderr, "incompatible or corrupted binary file\n");
 		fprintf(stderr,
 			"expected 0x%08x 0x%08x 0x%08x\n"
 			"got 0x%08x 0x%08x 0x%08x\n",
@@ -1160,6 +1198,13 @@ int main(int argc, char **argv)
 		if (ret < 0)
 			goto out;
 
+		/* update the checksum for writing */
+		ret = set_value_int(conf_buf, root_struct,
+				    calc_crc32(conf_buf, root_struct->size),
+				    DEFAULT_CHKSUM_ELEMENT);
+		if (ret < 0)
+			goto out;
+
 		ret = write_file(output_filename, conf_buf, root_struct->size);
 		if (ret < 0)
 			goto out;
@@ -1176,6 +1221,13 @@ int main(int argc, char **argv)
 			goto out;
 
 		ret = parse_ini(conf_buf, root_struct, ini_buf);
+		if (ret < 0)
+			goto out;
+
+		/* update the checksum for writing */
+		ret = set_value_int(conf_buf, root_struct,
+				    calc_crc32(conf_buf, root_struct->size),
+				    DEFAULT_CHKSUM_ELEMENT);
 		if (ret < 0)
 			goto out;
 

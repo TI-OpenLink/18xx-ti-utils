@@ -1,6 +1,6 @@
 CFLAGS = -O2 -Wall
 
-OBJS = main.o
+OBJS = main.o crc32.o
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
