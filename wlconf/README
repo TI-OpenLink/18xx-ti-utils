@@ -127,3 +127,7 @@ TODO
 
 * Prevent any of the special elements (such as header.magic,
   header.version and header.checksum) from being read or set.
+
+* Check if output file size matches input file size.  If it doesn't
+  there's probably something wrong in the struct.bin generation
+  (eg. array sizes that were not expanded).
