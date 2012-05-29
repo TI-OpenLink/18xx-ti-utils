@@ -1,10 +1,10 @@
 LOCAL_PATH:= $(call my-dir)
 
-# wlconf
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := \
-        main.c
+        main.c \
+	crc32.c
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)
