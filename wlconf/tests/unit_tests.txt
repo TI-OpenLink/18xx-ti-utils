@@ -1,0 +1,46 @@
+wlconf unit tests
+=================
+
+Author: Luciano Coelho <coelho@ti.com>
+
+Copyright (C) 2012, Texas Instruments Inc.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 2 as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+USA
+
+1. BINARY FILE VALIDITY CHECKS
+------------------------------
+
+The binary file contains 3 values that are used for validity and
+corruption checks: magic, version and checksum.
+
+1.1. Conf file with valid magic number
+
+     Make sure the input file (test-1.1-conf.bin) contains
+     0x10e100ca in its first 4 bytes and run:
+
+	./wlconf -g header.magic -i tests/test-1.1-conf.bin
+
+     Expected result: the tool returns the value of header.conf and it
+     is 0x10e100ca.
+
+1.2 Conf file with invalid magic number
+
+     Make sure the input file (test-1.2-conf.bin) contains
+     0xffffffff in its first 4 bytes and run:
+
+	./wlconf -g header.magic -i tests/test-1.2-conf.bin
+
+     Expected result: the tool should reject the file and print an
+     error.
