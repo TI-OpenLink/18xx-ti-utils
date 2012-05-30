@@ -1,4 +1,8 @@
-LOCAL_PATH:= $(call my-dir)
+LOCAL_DIR:= $(call my-dir)
+LOCAL_PATH:= $(LOCAL_DIR)
+
+include $(LOCAL_PATH)/wlconf/Android.mk
+LOCAL_PATH=$(LOCAL_DIR)
 
 #
 # Calibrator
@@ -49,10 +53,6 @@ LOCAL_STATIC_LIBRARIES := libnl_2
 LOCAL_MODULE := wl_logproxy
 
 include $(BUILD_EXECUTABLE)
-
-
-
-
 
 include $(LOCAL_PATH)/hw/Android.mk
 
