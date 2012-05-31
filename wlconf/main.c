@@ -53,6 +53,11 @@ struct dict_entry {
 	char *element_str;
 };
 
+enum text_file_type {
+	TEXT_FILE_INI,
+	TEXT_FILE_CONF,
+};
+
 struct type types[] = {
 	{ "u32", 4, "%u" },
 	{ "u16", 2, "%u" },
@@ -89,7 +94,7 @@ struct type types[] = {
 #define TEXT_CONF_PATTERN	"^[\n\t\r ]*([A-Za-z_][A-Za-z0-9_.]*)" \
 	"[\n\t\r ]*=[\n\t\r ]*([A-Za-z0-9_]+)"
 
-#define INI_PATTERN		"^[\n\t\r ]*([A-Za-z_][A-Za-z0-9_]*)" \
+#define TEXT_INI_PATTERN	"^[\n\t\r ]*([A-Za-z_][A-Za-z0-9_]*)" \
 	"[\n\t\r ]*=[\n\t\r ]*([0-9A-Fa-f]+)"
 
 #define DICT_PATTERN		"^[\n\t\r ]*([A-Za-z_][A-Za-z0-9_]*)" \
@@ -1153,13 +1158,13 @@ out:
 	return ret;
 }
 
-static int parse_ini(void *conf_buffer, struct structure *structure,
-		     const char *filename)
+static int parse_text_file(void *conf_buffer, struct structure *structure,
+			   const char *filename, enum text_file_type type)
 {
 	regex_t r;
 	FILE *file;
 	unsigned int parse_errors = 0, line_number = 0;
-	int ret;
+	int ret = -1;
 
 	file = fopen(filename, "r");
 	if (!file) {
@@ -1167,7 +1172,11 @@ static int parse_ini(void *conf_buffer, struct structure *structure,
 		return -1;
 	}
 
-	ret = regcomp(&r, INI_PATTERN, REG_EXTENDED);
+	if (type == TEXT_FILE_CONF)
+		ret = regcomp(&r, TEXT_CONF_PATTERN, REG_EXTENDED);
+	else if (type == TEXT_FILE_INI)
+		ret = regcomp(&r, TEXT_INI_PATTERN, REG_EXTENDED);
+
 	if (ret < 0)
 		goto out;
 
@@ -1214,113 +1223,15 @@ static int parse_ini(void *conf_buffer, struct structure *structure,
 
 		value_str = strndup(line + m[2].rm_so, m[2].rm_eo - m[2].rm_so);
 
-		ret = translate_ini(&element_str, &value_str);
-		if (ret < 0) {
-			fprintf(stderr, "line %d: couldn't translate INI file: '%s'\n",
-				line_number, line);
-			parse_errors++;
+		if (type == TEXT_FILE_INI) {
+			ret = translate_ini(&element_str, &value_str);
+			if (ret < 0) {
+				fprintf(stderr,
+					"line %d: couldn't translate INI file: '%s'\n",
+					line_number, line);
+				parse_errors++;
+			}
 		}
-
-		pos = get_element_pos(structure, element_str, &element);
-		if (pos < 0) {
-			fprintf(stderr, "line %d: couldn't find element %s\n",
-				line_number, element_str);
-			parse_errors++;
-		} else if (element->array_size > 1) {
-			fprintf(stderr,
-				"line %d: setting arrays not supported yet\n",
-				line_number);
-			parse_errors++;
-		} else if (element->type >= STRUCT_BASE) {
-			fprintf(stderr,
-				"line %d: setting entire structures is not supported.\n",
-				line_number);
-			parse_errors++;
-		} else {
-			value = strtoul(value_str, NULL, 0);
-			ret = set_data(element, ((char *)conf_buffer) + pos, &value);
-		}
-
-		free(element_str);
-		free(value_str);
-
-	cont:
-		free(line);
-	};
-
-	regfree(&r);
-out:
-	if (parse_errors) {
-		fprintf(stderr,
-			"%d errors found, output file was not generated.\n",
-			parse_errors);
-		ret = -1;
-	}
-
-	fclose(file);
-	return ret;
-}
-
-static int parse_text_conf(void *conf_buffer, struct structure *structure,
-			   const char *filename)
-{
-	regex_t r;
-	FILE *file;
-	unsigned int parse_errors = 0, line_number = 0;
-	int ret;
-
-	file = fopen(filename, "r");
-	if (!file) {
-		fprintf(stderr, "Couldn't open file '%s'\n", filename);
-		return -1;
-	}
-
-	ret = regcomp(&r, TEXT_CONF_PATTERN, REG_EXTENDED);
-	if (ret < 0)
-		goto out;
-
-	while (!feof(file)) {
-		char *element_str = NULL, *value_str = NULL, *line = NULL;
-		char *elim;
-		regmatch_t m[3];
-		struct element *element;
-		long int value;
-		int pos;
-		size_t len;
-
-		ret = getline(&line, &len, file);
-		if (ret < 0) {
-			ret = 0;
-			break;
-		}
-
-		line_number++;
-
-		/* eliminate comments */
-		elim = strchr(line, '#');
-		if (elim)
-			*elim = '\0';
-
-		/* eliminate newline */
-		elim = strchr(line, '\n');
-		if (elim)
-			*elim = '\0';
-
-		if (!strlen(line))
-			goto cont;
-
-		if (regexec(&r, line, 3, m, 0)) {
-			fprintf(stderr, "line %d: invalid syntax: '%s'\n",
-				line_number, line);
-
-			parse_errors++;
-			goto cont;
-		}
-
-		element_str =
-			strndup(line + m[1].rm_so, m[1].rm_eo - m[1].rm_so);
-
-		value_str = strndup(line + m[2].rm_so, m[2].rm_eo - m[2].rm_so);
 
 		pos = get_element_pos(structure, element_str, &element);
 		if (pos < 0) {
@@ -1539,7 +1450,8 @@ int main(int argc, char **argv)
 		if (ret < 0)
 			goto out;
 
-		ret = parse_text_conf(conf_buf, root_struct, command_arg);
+		ret = parse_text_file(conf_buf, root_struct,
+				      command_arg, TEXT_FILE_CONF);
 		if (ret < 0)
 			goto out;
 
@@ -1565,7 +1477,8 @@ int main(int argc, char **argv)
 		if (ret < 0)
 			goto out;
 
-		ret = parse_ini(conf_buf, root_struct, command_arg);
+		ret = parse_text_file(conf_buf, root_struct,
+				      command_arg, TEXT_FILE_INI);
 		if (ret < 0)
 			goto out;
 
