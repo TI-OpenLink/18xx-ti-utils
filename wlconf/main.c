@@ -621,7 +621,6 @@ static int get_element_pos(struct structure *structure, const char *argument,
 			}
 
 		if (i == curr_struct->n_elements) {
-			fprintf(stderr, "couldn't find element %s\n", str);
 			pos = -1;
 			goto out;
 		}
@@ -999,59 +998,103 @@ out:
 }
 
 static int parse_text_conf(void *conf_buffer, struct structure *structure,
-			   const char *buffer)
+			   const char *filename)
 {
 	regex_t r;
-	const char *str;
+	FILE *file;
+	unsigned int parse_errors = 0, line_number = 0;
 	int ret;
+
+	file = fopen(filename, "r");
+	if (!file) {
+		fprintf(stderr, "Couldn't open file '%s'\n", filename);
+		return -1;
+	}
 
 	ret = regcomp(&r, TEXT_CONF_PATTERN, REG_EXTENDED);
 	if (ret < 0)
 		goto out;
 
-	str = buffer;
-
-	while (strlen(str)) {
-		char *element_str = NULL, *value_str = NULL;
+	while (!feof(file)) {
+		char *element_str = NULL, *value_str = NULL, *line = NULL;
+		char *elim;
 		regmatch_t m[3];
 		struct element *element;
 		long int value;
 		int pos;
+		size_t len;
 
-		if (regexec(&r, str, 3, m, 0))
+		ret = getline(&line, &len, file);
+		if (ret < 0) {
+			ret = 0;
 			break;
+		}
+
+		line_number++;
+
+		/* eliminate comments */
+		elim = strchr(line, '#');
+		if (elim)
+			*elim = '\0';
+
+		/* eliminate newline */
+		elim = strchr(line, '\n');
+		if (elim)
+			*elim = '\0';
+
+		if (!strlen(line))
+			goto cont;
+
+		if (regexec(&r, line, 3, m, 0)) {
+			fprintf(stderr, "line %d: invalid syntax: '%s'\n",
+				line_number, line);
+
+			parse_errors++;
+			goto cont;
+		}
 
 		element_str =
-			strndup(str + m[1].rm_so, m[1].rm_eo - m[1].rm_so);
+			strndup(line + m[1].rm_so, m[1].rm_eo - m[1].rm_so);
 
-		value_str = strndup(str + m[2].rm_so, m[2].rm_eo - m[2].rm_so);
+		value_str = strndup(line + m[2].rm_so, m[2].rm_eo - m[2].rm_so);
 
 		pos = get_element_pos(structure, element_str, &element);
 		if (pos < 0) {
-			fprintf(stderr, "couldn't find %s\n", element_str);
-			ret = -1;
+			fprintf(stderr, "line %d: couldn't find element %s\n",
+				line_number, element_str);
+			parse_errors++;
 		} else if (element->array_size > 1) {
-			fprintf(stderr, "setting arrays not supported yet\n");
-			ret = -1;
+			fprintf(stderr,
+				"line %d: setting arrays not supported yet\n",
+				line_number);
+			parse_errors++;
 		} else if (element->type >= STRUCT_BASE) {
 			fprintf(stderr,
-				"setting entire structures is not supported.\n");
-			ret = -1;
+				"line %d: setting entire structures is not supported.\n",
+				line_number);
+			parse_errors++;
 		} else {
 			value = strtol(value_str, NULL, 0);
 			ret = set_data(element, ((char *)conf_buffer) + pos, &value);
 		}
 
 		free(element_str);
-		element_str = NULL;
 		free(value_str);
-		value_str = NULL;
 
-		str += m[2].rm_eo;
-	}
+	cont:
+		free(line);
+	};
 
 	regfree(&r);
 out:
+	if (parse_errors) {
+		fprintf(stderr,
+			"%d errors found, output file was not generated.\n",
+			parse_errors);
+		ret = -1;
+	}
+
+	fclose(file);
 	return ret;
 }
 
@@ -1077,7 +1120,6 @@ int main(int argc, char **argv)
 {
 	void *header_buf = NULL;
 	void *conf_buf = NULL;
-	void *text_conf_buf = NULL;
 	char *header_filename = NULL;
 	char *binary_struct_filename = NULL;
 	char *input_filename = NULL;
@@ -1227,11 +1269,7 @@ int main(int argc, char **argv)
 		if (ret < 0)
 			goto out;
 
-		ret = read_file(command_arg, &text_conf_buf, 0);
-		if (ret < 0)
-			goto out;
-
-		ret = parse_text_conf(conf_buf, root_struct, text_conf_buf);
+		ret = parse_text_conf(conf_buf, root_struct, command_arg);
 		if (ret < 0)
 			goto out;
 
