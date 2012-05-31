@@ -1054,11 +1054,17 @@ static int translate_ini(char **element_str, char **value_str)
 		}
 
 	translated_value = malloc(MAX_VALUE_STR_LEN);
+	if(!translated_value) {
+		fprintf(stderr, "couldn't allocate memory\n");
+		ret = -1;
+		goto out;
+	}
+
 	len = snprintf(translated_value, MAX_VALUE_STR_LEN, "0x%s", *value_str);
 	if (len >= MAX_VALUE_STR_LEN) {
 		fprintf(stderr, "value string is too long!\n");
 		ret = -1;
-		goto out;
+		goto out_free;
 	}
 
 	free(*value_str);
@@ -1066,9 +1072,11 @@ static int translate_ini(char **element_str, char **value_str)
 	if (!*value_str) {
 		fprintf(stderr, "couldn't allocate memory\n");
 		ret = -1;
-		goto out;
+		goto out_free;
 	}
 
+out_free:
+	free(translated_value);
 out:
 	return ret;
 }
