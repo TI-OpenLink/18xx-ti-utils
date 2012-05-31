@@ -80,8 +80,8 @@ struct type types[] = {
 #define ELEMENT_PATTERN	"[\n\t\r ]*([A-Za-z0-9_]+)[\n\t\r ]+" \
 	"([a-zA-Z_][a-zA-Z0-9_]*)(\\[([0-9]+)\\])?[\n\t\r ]*;[\n\t\r ]*"
 
-#define INI_PATTERN	"^[\n\t\r ]*([A-Za-z_][A-Za-z0-9_.]*)[\n\t\r ]*=" \
-	"[\n\t\r ]*([A-Za-z0-9_]+)"
+#define TEXT_CONF_PATTERN	"^[\n\t\r ]*([A-Za-z_][A-Za-z0-9_.]*)" \
+	"[\n\t\r ]*=[\n\t\r ]*([A-Za-z0-9_]+)"
 
 #define CC_COMMENT_PATTERN	"(([^/]|[^/][^/])*)//[^\n]*\n(.*)"
 
@@ -323,7 +323,7 @@ static void print_usage(char *executable)
 	       "\t-s, --set\t\tset the value of the specified element (element[.element...])\n"
 	       "\t-G, --generate-struct\tgenerate the binary structure file from\n"
 	       "\t\t\t\tthe specified source file\n"
-	       "\t-I, --parse-ini\t\tparse the specified INI file and set the values accordingly\n"
+	       "\t-C, --parse-text-conf\tparse the specified text config and set the values accordingly\n"
 	       "\t\t\t\tin the output binary configuration file\n"
 	       "\t-p, --print-struct\tprint out the structure\n"
 	       "\t-d, --dump\t\tdump the entire configuration binary in human-readable format\n"
@@ -998,14 +998,14 @@ out:
 	return ret;
 }
 
-static int parse_ini(void *conf_buffer, struct structure *structure,
-		     const char *buffer)
+static int parse_text_conf(void *conf_buffer, struct structure *structure,
+			   const char *buffer)
 {
 	regex_t r;
 	const char *str;
 	int ret;
 
-	ret = regcomp(&r, INI_PATTERN, REG_EXTENDED);
+	ret = regcomp(&r, TEXT_CONF_PATTERN, REG_EXTENDED);
 	if (ret < 0)
 		goto out;
 
@@ -1055,7 +1055,7 @@ out:
 	return ret;
 }
 
-#define SHORT_OPTIONS "S:s:b:i:o:g:G:I:pdhX"
+#define SHORT_OPTIONS "S:s:b:i:o:g:G:C:pdhX"
 
 struct option long_options[] = {
 	{ "binary-struct",	required_argument,	NULL,	'b' },
@@ -1066,7 +1066,7 @@ struct option long_options[] = {
 	{ "get",		required_argument,	NULL,	'g' },
 	{ "set",		required_argument,	NULL,	's' },
 	{ "generate-struct",	required_argument,	NULL,	'G' },
-	{ "parse-ini",		required_argument,	NULL,	'I' },
+	{ "parse-text-conf",	required_argument,	NULL,	'C' },
 	{ "print-struct",	no_argument,		NULL,	'p' },
 	{ "dump",		no_argument,		NULL,	'd' },
 	{ "help",		no_argument,		NULL,	'h' },
@@ -1077,7 +1077,7 @@ int main(int argc, char **argv)
 {
 	void *header_buf = NULL;
 	void *conf_buf = NULL;
-	void *ini_buf = NULL;
+	void *text_conf_buf = NULL;
 	char *header_filename = NULL;
 	char *binary_struct_filename = NULL;
 	char *input_filename = NULL;
@@ -1117,7 +1117,7 @@ int main(int argc, char **argv)
 		case 'G':
 		case 'g':
 		case 's':
-		case 'I':
+		case 'C':
 			command_arg = optarg;
 			/* Fall through */
 		case 'p':
@@ -1222,16 +1222,16 @@ int main(int argc, char **argv)
 
 		break;
 
-	case 'I':
+	case 'C':
 		ret = read_input(input_filename, &conf_buf, root_struct);
 		if (ret < 0)
 			goto out;
 
-		ret = read_file(command_arg, &ini_buf, 0);
+		ret = read_file(command_arg, &text_conf_buf, 0);
 		if (ret < 0)
 			goto out;
 
-		ret = parse_ini(conf_buf, root_struct, ini_buf);
+		ret = parse_text_conf(conf_buf, root_struct, text_conf_buf);
 		if (ret < 0)
 			goto out;
 

@@ -90,3 +90,46 @@ corruption checks: magic, version and checksum.
 
      Expected result:  the tool should be able to read the value and
      print it out (0x10e100ca).
+
+
+2. TEXT CONFIGURATION PARSING
+-----------------------------
+
+2.1 Valid text configuration file
+
+    Make sure you have a valid text configuration file (test-2.1.conf)
+    and run:
+
+	./wlconf -C tests/test-2.1.conf -o tests/result-2.1-conf.bin
+
+    Check that the values were correctly set in the output binary:
+
+	./wlconf -g wl18xx.phy.rdl -i tests/result-2.1-conf.bin
+	./wlconf -g wl18xx.phy.low_band_component -i tests/result-2.1-conf.bin
+	./wlconf -g wl18xx.phy.high_band_component_type -i tests/result-2.1-conf.bin
+
+    Expected results: the commands above must return the values as
+    specified in the conf text file: 0x01, 0x02, 0x03 respectively.
+
+2.2 Text configuration file with inexistent element
+
+    Make sure one of the values in the text configuration file doesn't
+    exist (test-2.2.conf) and run:
+
+	./wlconf -C tests/test-2.2.conf -o tests/result-2.2-conf.bin
+
+    Expected result: the tool should return an error specifying all
+    the elements that couldn't be found: wl18xx.phy.foo and
+    wl18xx.phy.bar.  The tests/result-2.2-conf.bin file should *not*
+    be generated.
+
+2.3 Text configuration file with invalid format
+
+    Make sure one of the lines in the text configuration file has a
+    wrong format (test-2.3.conf) and run:
+
+	./wlconf -C tests/test-2.3.conf -o tests/result-2.3-conf.bin
+
+    Expected result: the tool should return an error specifying all
+    the lines that couldn't be parsed: wl18xx.phy.rdl:0x01 and
+    wl18xx.phy.bar.  The output file shoud *not* be generated.

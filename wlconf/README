@@ -36,10 +36,10 @@ EXAMPLES
 
   # ./wlconf -i /lib/firmware/ti-connectivity/wl18xx-conf.bin -s core.hangover.window_size=0x20
 
-* Parse an INI file and generate a configuration binary with the
-  values specified:
+* Parse a text configuration file and generate a configuration binary
+  with the values specified:
 
-  # ./wlconf -I example.ini
+  # ./wlconf -C example.conf
 
 
 INI FORMAT
