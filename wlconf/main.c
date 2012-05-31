@@ -91,14 +91,14 @@ struct type types[] = {
 #define ELEMENT_PATTERN	"[\n\t\r ]*([A-Za-z0-9_]+)[\n\t\r ]+" \
 	"([a-zA-Z_][a-zA-Z0-9_]*)(\\[([0-9]+)\\])?[\n\t\r ]*;[\n\t\r ]*"
 
-#define TEXT_CONF_PATTERN	"^[\n\t\r ]*([A-Za-z_][A-Za-z0-9_.]*)" \
-	"[\n\t\r ]*=[\n\t\r ]*([A-Za-z0-9_]+)"
+#define TEXT_CONF_PATTERN	"^[\t ]*([A-Za-z_][A-Za-z0-9_.]*)" \
+	"[\t ]*=[\t ]*([A-Za-z0-9_]+)"
 
-#define TEXT_INI_PATTERN	"^[\n\t\r ]*([A-Za-z_][A-Za-z0-9_]*)" \
-	"[\n\t\r ]*=[\n\t\r ]*([0-9A-Fa-f]+)"
+#define TEXT_INI_PATTERN	"^[\t ]*([A-Za-z_][A-Za-z0-9_]*)" \
+	"[\t ]*=[\t ]*([0-9A-Fa-f]+)"
 
-#define DICT_PATTERN		"^[\n\t\r ]*([A-Za-z_][A-Za-z0-9_]*)" \
-	"[\n\t\r ]+([A-Za-z_][A-Za-z0-9_.]*)"
+#define DICT_PATTERN		"^[\t ]*([A-Za-z_][A-Za-z0-9_]*)" \
+	"[\t ]+([A-Za-z_][A-Za-z0-9_.]*)"
 
 #define CC_COMMENT_PATTERN	"(([^/]|[^/][^/])*)//[^\n]*\n(.*)"
 
