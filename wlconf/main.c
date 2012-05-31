@@ -48,6 +48,11 @@ struct type {
 	char *format;
 };
 
+struct dict_entry {
+	char *ini_str;
+	char *element_str;
+};
+
 struct type types[] = {
 	{ "u32", 4, "%u" },
 	{ "u16", 2, "%u" },
@@ -62,6 +67,7 @@ struct type types[] = {
 #define DEFAULT_INPUT_FILENAME	"wl18xx-conf-default.bin"
 #define DEFAULT_OUTPUT_FILENAME	"wl18xx-conf.bin"
 #define DEFAULT_BIN_FILENAME	"struct.bin"
+#define DEFAULT_DICT_FILENAME	"dictionary.txt"
 #define DEFAULT_ROOT_STRUCT	"wlcore_conf_file"
 #define DEFAULT_MAGIC_SYMBOL	"WL18XX_CONF_MAGIC"
 #define DEFAULT_VERSION_SYMBOL	"WL18XX_CONF_VERSION"
@@ -83,6 +89,12 @@ struct type types[] = {
 #define TEXT_CONF_PATTERN	"^[\n\t\r ]*([A-Za-z_][A-Za-z0-9_.]*)" \
 	"[\n\t\r ]*=[\n\t\r ]*([A-Za-z0-9_]+)"
 
+#define INI_PATTERN		"^[\n\t\r ]*([A-Za-z_][A-Za-z0-9_]*)" \
+	"[\n\t\r ]*=[\n\t\r ]*([0-9A-Fa-f]+)"
+
+#define DICT_PATTERN		"^[\n\t\r ]*([A-Za-z_][A-Za-z0-9_]*)" \
+	"[\n\t\r ]+([A-Za-z_][A-Za-z0-9_.]*)"
+
 #define CC_COMMENT_PATTERN	"(([^/]|[^/][^/])*)//[^\n]*\n(.*)"
 
 #define C_COMMENT_PATTERN	"(([^/]|[^/][^*])*)/\\*(([^*]|[^*][^/])*)\\*/(.*)"
@@ -92,6 +104,8 @@ struct type types[] = {
 #define DEFINE_PATTERN	"#define[\n\t\r ]+([A-Za-z_][A-Za-z0-9_]*)"	\
 	"[\n\t\r ]+(0x[0-9A-Fa-f]+)"
 
+static struct dict_entry *dict = NULL;
+static int n_dict_entries = 0;
 
 static struct structure *structures = NULL;
 static int n_structs = 0;
@@ -324,6 +338,7 @@ static void print_usage(char *executable)
 	       "\t-G, --generate-struct\tgenerate the binary structure file from\n"
 	       "\t\t\t\tthe specified source file\n"
 	       "\t-C, --parse-text-conf\tparse the specified text config and set the values accordingly\n"
+	       "\t-I, --parse-ini\t\tparse the specified INI file and set the values accordingly\n"
 	       "\t\t\t\tin the output binary configuration file\n"
 	       "\t-p, --print-struct\tprint out the structure\n"
 	       "\t-d, --dump\t\tdump the entire configuration binary in human-readable format\n"
@@ -340,6 +355,18 @@ static void free_structs(void)
 		free(structures[i].elements);
 
 	free(structures);
+}
+
+static void free_dict(void)
+{
+	int i;
+
+	for (i = 0; i < n_dict_entries; i++) {
+		free(dict[i].ini_str);
+		free(dict[i].element_str);
+	}
+
+	free(dict);
 }
 
 static int parse_header(const char *buffer)
@@ -997,6 +1024,243 @@ out:
 	return ret;
 }
 
+/*
+ * For now we use only 256, because we don't support arrays.  When
+ * arrays are implemented we must allocate more space.
+ */
+#define MAX_VALUE_STR_LEN	256
+static int translate_ini(char **element_str, char **value_str)
+{
+	int i, ret = 0;
+	char *translated_value;
+	size_t len;
+
+	for (i = 0; i < n_dict_entries; i++)
+		if (!strcmp(dict[i].ini_str, *element_str)) {
+			free(*element_str);
+			*element_str = strdup(dict[i].element_str);
+			if (!element_str) {
+				fprintf(stderr, "couldn't allocate memory\n");
+				ret = -1;
+				goto out;
+			}
+		}
+
+	translated_value = malloc(MAX_VALUE_STR_LEN);
+	len = snprintf(translated_value, MAX_VALUE_STR_LEN, "0x%s", *value_str);
+	if (len >= MAX_VALUE_STR_LEN) {
+		fprintf(stderr, "value string is too long!\n");
+		ret = -1;
+		goto out;
+	}
+
+	free(*value_str);
+	*value_str = strdup(translated_value);
+	if (!*value_str) {
+		fprintf(stderr, "couldn't allocate memory\n");
+		ret = -1;
+		goto out;
+	}
+
+out:
+	return ret;
+}
+
+static int parse_dict(const char *filename)
+{
+	regex_t r;
+	FILE *file;
+	unsigned int parse_errors = 0, line_number = 0;
+	int ret;
+
+	file = fopen(filename, "r");
+	if (!file) {
+		fprintf(stderr, "Couldn't open file '%s'\n", filename);
+		return -1;
+	}
+
+	ret = regcomp(&r, DICT_PATTERN, REG_EXTENDED);
+	if (ret < 0)
+		goto out;
+
+	while (!feof(file)) {
+		char *ini_str = NULL, *element_str = NULL, *line = NULL;
+		char *elim;
+		regmatch_t m[3];
+		size_t len;
+
+		ret = getline(&line, &len, file);
+		if (ret < 0) {
+			ret = 0;
+			break;
+		}
+
+		line_number++;
+
+		/* eliminate comments */
+		elim = strchr(line, '#');
+		if (elim)
+			*elim = '\0';
+
+		/* eliminate newline */
+		elim = strchr(line, '\n');
+		if (elim)
+			*elim = '\0';
+
+		if (!strlen(line))
+			goto cont;
+
+		if (regexec(&r, line, 3, m, 0)) {
+			fprintf(stderr, "line %d: invalid syntax: '%s'\n",
+				line_number, line);
+
+			parse_errors++;
+			goto cont;
+		}
+
+		ini_str =
+			strndup(line + m[1].rm_so, m[1].rm_eo - m[1].rm_so);
+
+		element_str = strndup(line + m[2].rm_so,
+				      m[2].rm_eo - m[2].rm_so);
+
+		dict = realloc(dict, ++n_dict_entries *
+			       sizeof(struct dict_entry));
+		if (!dict) {
+			free(line);
+			ret = -1;
+			goto out_free;
+		}
+
+		dict[n_dict_entries - 1].ini_str = ini_str;
+		dict[n_dict_entries - 1].element_str = element_str;
+
+	cont:
+		free(line);
+	};
+
+out_free:
+	regfree(&r);
+out:
+	if (parse_errors) {
+		fprintf(stderr,
+			"%d errors found, output file was not generated.\n",
+			parse_errors);
+		ret = -1;
+	}
+
+	fclose(file);
+	return ret;
+}
+
+static int parse_ini(void *conf_buffer, struct structure *structure,
+		     const char *filename)
+{
+	regex_t r;
+	FILE *file;
+	unsigned int parse_errors = 0, line_number = 0;
+	int ret;
+
+	file = fopen(filename, "r");
+	if (!file) {
+		fprintf(stderr, "Couldn't open file '%s'\n", filename);
+		return -1;
+	}
+
+	ret = regcomp(&r, INI_PATTERN, REG_EXTENDED);
+	if (ret < 0)
+		goto out;
+
+	while (!feof(file)) {
+		char *element_str = NULL, *value_str = NULL, *line = NULL;
+		char *elim;
+		regmatch_t m[3];
+		struct element *element;
+		long int value;
+		int pos;
+		size_t len;
+
+		ret = getline(&line, &len, file);
+		if (ret < 0) {
+			ret = 0;
+			break;
+		}
+
+		line_number++;
+
+		/* eliminate comments */
+		elim = strchr(line, '#');
+		if (elim)
+			*elim = '\0';
+
+		/* eliminate newline */
+		elim = strchr(line, '\n');
+		if (elim)
+			*elim = '\0';
+
+		if (!strlen(line))
+			goto cont;
+
+		if (regexec(&r, line, 3, m, 0)) {
+			fprintf(stderr, "line %d: invalid syntax: '%s'\n",
+				line_number, line);
+
+			parse_errors++;
+			goto cont;
+		}
+
+		element_str =
+			strndup(line + m[1].rm_so, m[1].rm_eo - m[1].rm_so);
+
+		value_str = strndup(line + m[2].rm_so, m[2].rm_eo - m[2].rm_so);
+
+		ret = translate_ini(&element_str, &value_str);
+		if (ret < 0) {
+			fprintf(stderr, "line %d: couldn't translate INI file: '%s'\n",
+				line_number, line);
+			parse_errors++;
+		}
+
+		pos = get_element_pos(structure, element_str, &element);
+		if (pos < 0) {
+			fprintf(stderr, "line %d: couldn't find element %s\n",
+				line_number, element_str);
+			parse_errors++;
+		} else if (element->array_size > 1) {
+			fprintf(stderr,
+				"line %d: setting arrays not supported yet\n",
+				line_number);
+			parse_errors++;
+		} else if (element->type >= STRUCT_BASE) {
+			fprintf(stderr,
+				"line %d: setting entire structures is not supported.\n",
+				line_number);
+			parse_errors++;
+		} else {
+			value = strtoul(value_str, NULL, 0);
+			ret = set_data(element, ((char *)conf_buffer) + pos, &value);
+		}
+
+		free(element_str);
+		free(value_str);
+
+	cont:
+		free(line);
+	};
+
+	regfree(&r);
+out:
+	if (parse_errors) {
+		fprintf(stderr,
+			"%d errors found, output file was not generated.\n",
+			parse_errors);
+		ret = -1;
+	}
+
+	fclose(file);
+	return ret;
+}
+
 static int parse_text_conf(void *conf_buffer, struct structure *structure,
 			   const char *filename)
 {
@@ -1074,7 +1338,7 @@ static int parse_text_conf(void *conf_buffer, struct structure *structure,
 				line_number);
 			parse_errors++;
 		} else {
-			value = strtol(value_str, NULL, 0);
+			value = strtoul(value_str, NULL, 0);
 			ret = set_data(element, ((char *)conf_buffer) + pos, &value);
 		}
 
@@ -1098,7 +1362,7 @@ out:
 	return ret;
 }
 
-#define SHORT_OPTIONS "S:s:b:i:o:g:G:C:pdhX"
+#define SHORT_OPTIONS "S:s:b:i:o:g:G:C:I:pdhX"
 
 struct option long_options[] = {
 	{ "binary-struct",	required_argument,	NULL,	'b' },
@@ -1110,6 +1374,7 @@ struct option long_options[] = {
 	{ "set",		required_argument,	NULL,	's' },
 	{ "generate-struct",	required_argument,	NULL,	'G' },
 	{ "parse-text-conf",	required_argument,	NULL,	'C' },
+	{ "parse-ini",		required_argument,	NULL,	'I' },
 	{ "print-struct",	no_argument,		NULL,	'p' },
 	{ "dump",		no_argument,		NULL,	'd' },
 	{ "help",		no_argument,		NULL,	'h' },
@@ -1124,6 +1389,7 @@ int main(int argc, char **argv)
 	char *binary_struct_filename = NULL;
 	char *input_filename = NULL;
 	char *output_filename = NULL;
+	char *dict_filename = NULL;
 	char *command_arg = NULL;
 	struct structure *root_struct;
 	int c, ret = 0;
@@ -1160,6 +1426,7 @@ int main(int argc, char **argv)
 		case 'g':
 		case 's':
 		case 'C':
+		case 'I':
 			command_arg = optarg;
 			/* Fall through */
 		case 'p':
@@ -1186,6 +1453,9 @@ int main(int argc, char **argv)
 
 	if (!input_filename)
 		input_filename = strdup(DEFAULT_INPUT_FILENAME);
+
+	if (!dict_filename)
+		dict_filename = strdup(DEFAULT_DICT_FILENAME);
 
 	if (!output_filename)
 		output_filename = strdup(DEFAULT_OUTPUT_FILENAME);
@@ -1286,6 +1556,32 @@ int main(int argc, char **argv)
 
 		break;
 
+	case 'I':
+		ret = read_input(input_filename, &conf_buf, root_struct);
+		if (ret < 0)
+			goto out;
+
+		ret = parse_dict(dict_filename);
+		if (ret < 0)
+			goto out;
+
+		ret = parse_ini(conf_buf, root_struct, command_arg);
+		if (ret < 0)
+			goto out;
+
+		/* update the checksum for writing */
+		ret = set_value_int(conf_buf, root_struct,
+				    calc_crc32(conf_buf, root_struct->size),
+				    DEFAULT_CHKSUM_ELEMENT);
+		if (ret < 0)
+			goto out;
+
+		ret = write_file(output_filename, conf_buf, root_struct->size);
+		if (ret < 0)
+			goto out;
+
+		break;
+
 	case 'p':
 		print_structs(NULL, root_struct);
 		break;
@@ -1305,8 +1601,11 @@ int main(int argc, char **argv)
 	free_file(conf_buf);
 
 	free_structs();
+	free_dict();
 out:
 	free(input_filename);
+	free(output_filename);
+	free(dict_filename);
 	free(binary_struct_filename);
 
 	exit(ret);

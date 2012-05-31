@@ -41,16 +41,46 @@ EXAMPLES
 
   # ./wlconf -C example.conf
 
+* Parse an INI file and generate a configuration binary with the
+  values specified.  The values that are not specified here are read
+  from the input binary file (default wl18xx-conf-default.bin):
 
-INI FORMAT
-----------
+  # ./wlconf -I example.ini
 
-The INI file should contain one or more lines with the following syntax:
+TEXT CONFIGURATION FORMAT
+-------------------------
+
+The text configuration file uses internal data representations.  With
+this kind of file, any element inside the configuration structure can
+be modified.  The file should contain one or more lines with the
+following syntax:
 
 <element>[.<element>...] = <value>
 
-Check the example.ini file for more details.
+Check the example.conf file for more details.
 
+INI FILE FORMAT
+---------------
+
+The INI file uses the format as specified by TI to the customers.  The
+format is not structured and contains simple element names:
+
+<element> = <value>
+
+Check the example.ini for a real life example.
+
+DICTIONARY FILE FORMAT
+----------------------
+
+The INI file format uses flat element names that must to be translated
+into the internal structured format.  The dictionary.txt file is used
+to specify the INI elements and their respective internal
+representations.  The dictionary file format is:
+
+<ini_flat_element> <element>[.<element>...]
+
+Check the dictionary.txt file for an example and to see which values
+can be used in INI files.
 
 KNOWN ISSUES AND LIMITATIONS
 ----------------------------
@@ -115,11 +145,7 @@ TODO
 
 * Fix some compiler warnings on x86 and make sure it works well;
 
-* Add checksum to the generated configuration binary;
-
 * Add option to change the root structure;
-
-* Allow comments in the INI file;
 
 * Handle endianess and different type sizes for different archs;
 
@@ -130,4 +156,6 @@ TODO
 
 * Check if output file size matches input file size.  If it doesn't
   there's probably something wrong in the struct.bin generation
-  (eg. array sizes that were not expanded).
+  (eg. array sizes that were not expanded);
+
+* Add an option to change the dictionary file;
