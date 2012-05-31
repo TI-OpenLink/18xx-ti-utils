@@ -92,7 +92,7 @@ struct type types[] = {
 	"([a-zA-Z_][a-zA-Z0-9_]*)(\\[([0-9]+)\\])?[\n\t\r ]*;[\n\t\r ]*"
 
 #define TEXT_CONF_PATTERN	"^[\t ]*([A-Za-z_][A-Za-z0-9_.]*)" \
-	"[\t ]*=[\t ]*([A-Za-z0-9_]+)"
+	"[\t ]*=[\t ]*([A-Za-z0-9_, \t]+)"
 
 #define TEXT_INI_PATTERN	"^[\t ]*([A-Za-z_][A-Za-z0-9_]*)" \
 	"[\t ]*=[\t ]*([0-9A-Fa-f]+)"
@@ -1160,7 +1160,7 @@ out:
 	return ret;
 }
 
-static int parse_text_file(void *conf_buffer, struct structure *structure,
+static int parse_text_file(char *conf_buffer, struct structure *structure,
 			   const char *filename, enum text_file_type type)
 {
 	regex_t r;
@@ -1183,12 +1183,12 @@ static int parse_text_file(void *conf_buffer, struct structure *structure,
 		goto out;
 
 	while (!feof(file)) {
-		char *element_str = NULL, *value_str = NULL, *line = NULL;
-		char *elim;
+		char *element_str = NULL, *line = NULL, *elim;
+		char *value_str = NULL, *value_array = NULL;
 		regmatch_t m[3];
 		struct element *element;
 		long int value;
-		int pos;
+		int pos, i;
 		size_t len;
 
 		ret = getline(&line, &len, file);
@@ -1223,10 +1223,10 @@ static int parse_text_file(void *conf_buffer, struct structure *structure,
 		element_str =
 			strndup(line + m[1].rm_so, m[1].rm_eo - m[1].rm_so);
 
-		value_str = strndup(line + m[2].rm_so, m[2].rm_eo - m[2].rm_so);
+		value_array = strndup(line + m[2].rm_so, m[2].rm_eo - m[2].rm_so);
 
 		if (type == TEXT_FILE_INI) {
-			ret = translate_ini(&element_str, &value_str);
+			ret = translate_ini(&element_str, &value_array);
 			if (ret < 0) {
 				fprintf(stderr,
 					"line %d: couldn't translate INI file: '%s'\n",
@@ -1240,23 +1240,40 @@ static int parse_text_file(void *conf_buffer, struct structure *structure,
 			fprintf(stderr, "line %d: couldn't find element %s\n",
 				line_number, element_str);
 			parse_errors++;
-		} else if (element->array_size > 1) {
-			fprintf(stderr,
-				"line %d: setting arrays not supported yet\n",
-				line_number);
-			parse_errors++;
+			goto cont_free;
 		} else if (element->type >= STRUCT_BASE) {
 			fprintf(stderr,
 				"line %d: setting entire structures is not supported.\n",
 				line_number);
 			parse_errors++;
-		} else {
-			value = strtoul(value_str, NULL, 0);
-			ret = set_data(element, ((char *)conf_buffer) + pos, &value);
+			goto cont_free;
 		}
 
+		i = 0;
+
+		value_str = strtok(value_array, ",");
+		while (value_str) {
+			if (++i > element->array_size)
+				break;
+			value = strtoul(value_str, NULL, 0);
+			ret = set_data(element, conf_buffer + pos, &value);
+
+			pos += types[element->type].size;
+
+			value_str = strtok(NULL, ",");
+		}
+
+		if (i != element->array_size) {
+			fprintf(stderr,
+				"line %d: invalid array size, expected %d got %d\n",
+				line_number, element->array_size, i);
+			parse_errors++;
+			goto cont_free;
+		}
+
+	cont_free:
 		free(element_str);
-		free(value_str);
+		free(value_array);
 
 	cont:
 		free(line);

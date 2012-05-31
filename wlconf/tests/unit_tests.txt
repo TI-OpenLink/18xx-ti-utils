@@ -107,9 +107,12 @@ corruption checks: magic, version and checksum.
 	./wlconf -g wl18xx.phy.rdl -i tests/result-2.1-conf.bin
 	./wlconf -g wl18xx.phy.low_band_component -i tests/result-2.1-conf.bin
 	./wlconf -g wl18xx.phy.high_band_component_type -i tests/result-2.1-conf.bin
+	./wlconf -g wl18xx.phy.per_sub_band_tx_trace_loss -i tests/result-2.1-conf.bin
 
     Expected results: the commands above must return the values as
-    specified in the conf text file: 0x01, 0x02, 0x03 respectively.
+    specified in the conf text file: 0x01, 0x02, 0x03 and an array
+    with (0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8),
+    respectively.
 
 2.2 Text configuration file with inexistent element
 
@@ -133,6 +136,18 @@ corruption checks: magic, version and checksum.
     Expected result: the tool should return an error specifying all
     the lines that couldn't be parsed: wl18xx.phy.rdl:0x01 and
     wl18xx.phy.bar.  The output file shoud *not* be generated.
+
+2.4 Text configuration file with a incorrect array sizes
+
+    Make sure some of the lines contain more and less values in the
+    arrays than what is expected (test-2.4.conf) and run:
+
+	./wlconf -C tests/test-2.4.conf -o tests/result-2.4-conf.bin
+
+    Expected result: the tool should return an error specifying all
+    the lines that couldn't be parsed: "expected 9 got 5" and
+    "expected 9 got 10".  The output file shoud *not* be generated.
+
 
 3. INI FILE PARSING
 -------------------
