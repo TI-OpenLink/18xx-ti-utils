@@ -95,7 +95,7 @@ struct type types[] = {
 	"[\t ]*=[\t ]*([A-Za-z0-9_, \t]+)"
 
 #define TEXT_INI_PATTERN	"^[\t ]*([A-Za-z_][A-Za-z0-9_]*)" \
-	"[\t ]*=[\t ]*([0-9A-Fa-f]+)"
+	"[\t ]*=[\t ]*([0-9A-Fa-f \t]+)"
 
 #define DICT_PATTERN		"^[\t ]*([A-Za-z_][A-Za-z0-9_]*)" \
 	"[\t ]+([A-Za-z_][A-Za-z0-9_.]*)"
@@ -1031,15 +1031,12 @@ out:
 	return ret;
 }
 
-/*
- * For now we use only 256, because we don't support arrays.  When
- * arrays are implemented we must allocate more space.
- */
+#define MAX_ARRAY_STR_LEN	4096
 #define MAX_VALUE_STR_LEN	256
-static int translate_ini(char **element_str, char **value_str)
+static int translate_ini(char **element_str, char **value_array)
 {
 	int i, ret = 0;
-	char *translated_value;
+	char *translated_array, *translated_value, *value_str;
 	size_t len;
 
 	for (i = 0; i < n_dict_entries; i++)
@@ -1053,29 +1050,51 @@ static int translate_ini(char **element_str, char **value_str)
 			}
 		}
 
+	translated_array = malloc(MAX_ARRAY_STR_LEN);
 	translated_value = malloc(MAX_VALUE_STR_LEN);
-	if(!translated_value) {
+	if(!translated_array || !translated_value) {
 		fprintf(stderr, "couldn't allocate memory\n");
 		ret = -1;
 		goto out;
 	}
 
-	len = snprintf(translated_value, MAX_VALUE_STR_LEN, "0x%s", *value_str);
-	if (len >= MAX_VALUE_STR_LEN) {
-		fprintf(stderr, "value string is too long!\n");
-		ret = -1;
-		goto out_free;
+	translated_array[0] = '\0';
+
+	value_str = strtok(*value_array, " \t");
+	while (value_str) {
+		len = snprintf(translated_value, MAX_VALUE_STR_LEN, "0x%s,",
+			       value_str);
+		if (len >= MAX_VALUE_STR_LEN) {
+			fprintf(stderr, "value string is too long!\n");
+			ret = -1;
+			goto out_free;
+		}
+
+		len = strlen(translated_value) + strlen(translated_array);
+		if (len >= MAX_ARRAY_STR_LEN) {
+			fprintf(stderr, "value array is too long!\n");
+			ret = -1;
+			goto out_free;
+		}
+
+		strncat(translated_array, translated_value, MAX_ARRAY_STR_LEN);
+
+		value_str = strtok(NULL, " \t");
 	}
 
-	free(*value_str);
-	*value_str = strdup(translated_value);
-	if (!*value_str) {
+	/* remove last comma */
+	translated_array[strlen(translated_array) - 1] = '\0';
+
+	free(*value_array);
+	*value_array = strdup(translated_array);
+	if (!*value_array) {
 		fprintf(stderr, "couldn't allocate memory\n");
 		ret = -1;
 		goto out_free;
 	}
 
 out_free:
+	free(translated_array);
 	free(translated_value);
 out:
 	return ret;
@@ -1240,6 +1259,7 @@ static int parse_text_file(char *conf_buffer, struct structure *structure,
 					"line %d: couldn't translate INI file: '%s'\n",
 					line_number, line);
 				parse_errors++;
+				goto cont_free;
 			}
 		}
 

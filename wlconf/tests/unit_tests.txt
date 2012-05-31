@@ -119,7 +119,7 @@ corruption checks: magic, version and checksum.
     Make sure some of the values in the text configuration file doesn't
     exist (test-2.2.conf) and run:
 
-	./wlconf -C tests/test-2.2.conf -o tests/result-2.2-conf.bin
+	./wlconf -C tests/test-2.2.dconf -o tests/result-2.2-conf.bin
 
     Expected result: the tool should return an error specifying all
     the elements that couldn't be found: wl18xx.phy.foo and
@@ -163,9 +163,12 @@ corruption checks: magic, version and checksum.
 	./wlconf -g wl18xx.phy.rdl -i tests/result-3.1-conf.bin
 	./wlconf -g wl18xx.phy.low_band_component -i tests/result-3.1-conf.bin
 	./wlconf -g wl18xx.phy.high_band_component_type -i tests/result-3.1-conf.bin
+	./wlconf -g wl18xx.phy.per_sub_band_tx_trace_loss -i tests/result-3.1-conf.bin
 
     Expected results: the commands above must return the values as
-    specified in the conf text file: 0xf1, 0xf2, 0xf3 respectively.
+    specified in the conf text file: 0xf1, 0xf2, 0xf3 and an array
+    with (0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7, 0xb8),
+    respectively.
 
 3.2 INI file with too long value
 
@@ -190,9 +193,12 @@ corruption checks: magic, version and checksum.
 	./wlconf -g wl18xx.phy.primary_clock_setting_time -i tests/result-3.3-conf.bin
 	./wlconf -g wl18xx.phy.low_band_component_type -i tests/result-3.3-conf.bin
 	./wlconf -g wl18xx.phy.high_band_component -i tests/result-3.3-conf.bin
+	./wlconf -g wl18xx.phy.per_sub_band_tx_trace_loss -i tests/result-3.3-conf.bin
 
     Expected results: the commands above must return the values as
-    specified in the conf text file: 0x05, 0x04, 0x01 respectively.
+    specified in the conf text file: 0x05, 0x04, 0x01 and an array
+    with (0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00),
+    respectively.
 
 3.4 INI file with inexistent element
 
@@ -215,3 +221,13 @@ corruption checks: magic, version and checksum.
     Expected result: the tool should return an error specifying all
     the lines that couldn't be parsed: BarBaz and TInstruments:0.  The
     output file shoud *not* be generated.
+
+3.6 INI file with too long array
+
+    Make sure the INI file has one array that is over the
+    MAX_ARRAY_STR_LEN (test-3.6.ini) and run:
+
+	./wlconf -I tests/test-3.6.ini
+
+    Expected result: the tool should return an error specifying all
+    the lines that contained too-long arrays.
