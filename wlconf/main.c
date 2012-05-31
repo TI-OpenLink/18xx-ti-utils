@@ -446,29 +446,31 @@ static size_t print_data(struct element *elem, void *data, int level)
 	for (i = 0; i < level; i++)
 		strncat(indent, INDENT_CHAR, sizeof(indent));
 
-	switch (types[elem->type].size) {
-	case 1:
-		u8 = data;
-		printf("0x%02x\n", *u8);
-		break;
-	case 2:
-		u16 = data;
-		printf("0x%04x\n", *u16);
-		break;
-	case 4:
-		for (i = 0; i < elem->array_size; i++) {
-			if ((elem->array_size > 1) && (i % 4 == 0))
-				printf("\n%s", indent);
+	for (i = 0; i < elem->array_size; i++) {
+		switch (types[elem->type].size) {
+		case 1:
+			u8 = (uint8_t *) pos;
+			printf("0x%02x", *u8);
+			break;
+		case 2:
+			u16 = (uint16_t *) pos;
+			printf("0x%04x", *u16);
+			break;
+		case 4:
 			u32 = (uint32_t *) pos;
-			printf("0x%08x, ", *u32);
-			pos += sizeof(uint32_t);
+			printf("0x%08x", *u32);
+		default:
+			fprintf(stderr, "Error! Unsupported data size\n");
+			break;
 		}
-		printf("\n");
-		break;
-	default:
-		fprintf(stderr, "Error! Unsupported data size\n");
-		break;
+
+		if (i < elem->array_size - 1)
+			printf(", ");
+
+		pos += types[elem->type].size;
 	}
+
+	printf("\n");
 
 	return types[elem->type].size * elem->array_size;
 }
