@@ -338,7 +338,8 @@ static void print_usage(char *executable)
 	       "\t-o, --output-config\tlocation of the input binary configuration file\n"
 	       "\t-X, --ignore-checksum\tignore file checksum error detection\n"
 	       "\n\tCOMMANDS\n"
-	       "\t-g, --get\t\tget the value of the specified element (element[.element...])\n"
+	       "\t-g, --get\t\tget the value of the specified element (element[.element...]) or\n"
+	       "\t\t\t\tprint the entire tree if no element is specified\n"
 	       "\t-s, --set\t\tset the value of the specified element (element[.element...])\n"
 	       "\t-G, --generate-struct\tgenerate the binary structure file from\n"
 	       "\t\t\t\tthe specified source file\n"
@@ -346,7 +347,6 @@ static void print_usage(char *executable)
 	       "\t-I, --parse-ini\t\tparse the specified INI file and set the values accordingly\n"
 	       "\t\t\t\tin the output binary configuration file\n"
 	       "\t-p, --print-struct\tprint out the structure\n"
-	       "\t-d, --dump\t\tdump the entire configuration binary in human-readable format\n"
 	       "\t-h, --help\t\tprint this help\n"
 	       "\n",
 	       executable);
@@ -498,23 +498,24 @@ static int set_data(struct element *elem, void *buffer, void *data)
 
 static int print_element(struct element *elem, char *parent, void *data)
 {
-	char *pos = data, *curr_name;
+	char *pos = data, *curr_name = NULL;
 	size_t len;
 	int ret = 0;
 
-	len = parent ? strlen(parent) : 0;
-	len += strlen(elem->name) + 2;
-	curr_name = malloc(len);
-	if (!curr_name) {
-		fprintf(stderr, "couldn't allocate memory\n");
-		ret = -1;
-		goto out;
-	}
+	if (parent) {
+		len = parent ? strlen(parent) : 0;
+		len += strlen(elem->name) + 2;
+		curr_name = malloc(len);
+		if (!curr_name) {
+			fprintf(stderr, "couldn't allocate memory\n");
+			ret = -1;
+			goto out;
+		}
 
-	if (parent)
 		sprintf(curr_name, "%s.%s", parent, elem->name);
-	else
+	} else if (elem->type != get_type(DEFAULT_ROOT_STRUCT)) {
 		curr_name = strdup(elem->name);
+	}
 
 	if (elem->type < STRUCT_BASE) {
 		printf("%s", curr_name);
@@ -686,23 +687,36 @@ static void get_value(void *buffer, struct structure *structure,
 		      char *argument)
 {
 	int pos;
-	struct element *element;
+	struct element *element, *root_element = NULL;
 	char *elim;
 
-	pos = get_element_pos(structure, argument, &element);
-	if (pos < 0) {
-		fprintf(stderr, "couldn't find %s\n", argument);
-		return;
+	if (argument) {
+		pos = get_element_pos(structure, argument, &element);
+		if (pos < 0) {
+			fprintf(stderr, "couldn't find %s\n", argument);
+			return;
+		}
+		/* change argument into parent by removing the last
+		 * element name */
+		elim = strrchr(argument, '.');
+		if (elim)
+			*elim = '\0';
+		else
+			argument = NULL;
+	} else {
+		root_element = malloc(sizeof(*element));
+		root_element->name = NULL;
+		root_element->type = get_type(DEFAULT_ROOT_STRUCT);
+		root_element->array_size = 1;
+		root_element->value = NULL;
+		root_element->position = 0;
+		element = root_element;
+		pos = 0;
 	}
 
-	/* change argument into parent by removing the last element name */
-	elim = strrchr(argument, '.');
-	if (elim)
-		*elim = '\0';
-	else
-		argument = NULL;
-
 	print_element(element, argument, ((char *)buffer) + pos);
+
+	free(root_element);
 }
 
 static int set_value(void *buffer, struct structure *structure,
@@ -1325,7 +1339,7 @@ out:
 	return ret;
 }
 
-#define SHORT_OPTIONS "S:s:b:i:o:g:G:C:I:pdhX"
+#define SHORT_OPTIONS "S:s:b:i:o:g::G:C:I:phX"
 
 struct option long_options[] = {
 	{ "binary-struct",	required_argument,	NULL,	'b' },
@@ -1333,13 +1347,12 @@ struct option long_options[] = {
 	{ "input-config",	required_argument,	NULL,	'i' },
 	{ "output-config",	required_argument,	NULL,	'o' },
 	{ "ignore-checksum",	no_argument,		NULL,	'X' },
-	{ "get",		required_argument,	NULL,	'g' },
+	{ "get",		optional_argument,	NULL,	'g' },
 	{ "set",		required_argument,	NULL,	's' },
 	{ "generate-struct",	required_argument,	NULL,	'G' },
 	{ "parse-text-conf",	required_argument,	NULL,	'C' },
 	{ "parse-ini",		required_argument,	NULL,	'I' },
 	{ "print-struct",	no_argument,		NULL,	'p' },
-	{ "dump",		no_argument,		NULL,	'd' },
 	{ "help",		no_argument,		NULL,	'h' },
 	{ 0, 0, 0, 0 },
 };
@@ -1393,7 +1406,6 @@ int main(int argc, char **argv)
 			command_arg = optarg;
 			/* Fall through */
 		case 'p':
-		case 'd':
 			if (command) {
 				fprintf(stderr,
 					"Only one command option is allowed, can't use -%c with -%c.\n",
@@ -1549,14 +1561,6 @@ int main(int argc, char **argv)
 
 	case 'p':
 		print_structs(NULL, root_struct);
-		break;
-
-	case 'd':
-		ret = read_input(input_filename, &conf_buf, root_struct);
-		if (ret < 0)
-			goto out;
-
-		print_structs(conf_buf, root_struct);
 		break;
 
 	default:

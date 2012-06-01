@@ -302,7 +302,7 @@ corruption checks: magic, version and checksum.
 
     And read it again:
 
-	./wlconf -g core.sched_scan -i tests/result-4.2-conf.bin > tests/result-4.5-2.conf
+	./wlconf -g core.sched_scan -i tests/result-4.5-conf.bin > tests/result-4.5-2.conf
 
     Compare the output configuration files:
 
@@ -310,3 +310,24 @@ corruption checks: magic, version and checksum.
 
     Expected result: there should be no difference between the
     result-4.5-1.conf and result-4.5-2.conf files.
+
+4.6 Get the entire data and read back the generated output
+
+    Make sure you have a valid input file (test-4.6-conf.bin) and run:
+
+	./wlconf -g -i tests/test-4.6-conf.bin > tests/result-4.6-1.conf
+
+    Then write the result back with the following command:
+
+	./wlconf -C tests/result-4.6-1.conf -o tests/result-4.6-conf.bin
+
+    And read it again:
+
+	./wlconf -g -i tests/result-4.6-conf.bin > tests/result-4.6-2.conf
+
+    Compare the output configuration files:
+
+	diff -u tests/result-4.6-1.conf tests/result-4.6-2.conf
+
+    Expected result: there should be no difference between the
+    result-4.6-1.conf and result-4.6-2.conf files.
