@@ -1552,13 +1552,15 @@ int main(int argc, char **argv)
 		break;
 
 	case 'd':
-		/* fall through -- dump is the default if not specified */
-	default:
 		ret = read_input(input_filename, &conf_buf, root_struct);
 		if (ret < 0)
 			goto out;
 
 		print_structs(conf_buf, root_struct);
+		break;
+
+	default:
+		print_usage(argv[0]);
 		break;
 	}
 
