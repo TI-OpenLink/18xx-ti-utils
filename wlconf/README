@@ -87,8 +87,6 @@ KNOWN ISSUES AND LIMITATIONS
 
 * Only the first struct in an array of structs can be set;
 
-* It's not possible to set or print an entire structure at once;
-
 * The dump and print commands are buggy;
 
 * It's too cumbersome and prone to errors to let the end-users parse

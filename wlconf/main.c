@@ -459,6 +459,7 @@ static size_t print_data(struct element *elem, void *data, int level)
 		case 4:
 			u32 = (uint32_t *) pos;
 			printf("0x%08x", *u32);
+			break;
 		default:
 			fprintf(stderr, "Error! Unsupported data size\n");
 			break;
@@ -495,35 +496,34 @@ static int set_data(struct element *elem, void *buffer, void *data)
 	return 0;
 }
 
-static size_t print_element(struct element *elem, int level, void *data)
+static int print_element(struct element *elem, char *parent, void *data)
 {
-	char indent[MAX_INDENT];
-	char *pos = data;
-	size_t len = 0;
-	int i;
+	char *pos = data, *curr_name;
+	size_t len;
+	int ret = 0;
 
-	if (level > MAX_INDENT) {
-		fprintf(stderr, "Max indentation level exceeded!\n");
-		level = MAX_INDENT;
+	len = parent ? strlen(parent) : 0;
+	len += strlen(elem->name) + 2;
+	curr_name = malloc(len);
+	if (!curr_name) {
+		fprintf(stderr, "couldn't allocate memory\n");
+		ret = -1;
+		goto out;
 	}
 
-	indent[0] = '\0';
-
-	for (i = 0; i < level; i++)
-		strncat(indent, INDENT_CHAR, sizeof(indent));
-
-	printf("%s%d\t", indent, elem->position);
+	if (parent)
+		sprintf(curr_name, "%s.%s", parent, elem->name);
+	else
+		curr_name = strdup(elem->name);
 
 	if (elem->type < STRUCT_BASE) {
-		printf("%s %s[%d]",
-		       types[elem->type].name,
-		       elem->name,
-		       elem->array_size);
+		printf("%s", curr_name);
 		if (data) {
 			if (elem->array_size) {
 				printf(" = ");
-				len += print_data(elem, pos, level + 1);
-				pos += len;
+				print_data(elem, pos, 0);
+				pos += elem->array_size *
+					types[elem->type].size;
 			} else {
 				printf("\n");
 			}
@@ -535,31 +535,35 @@ static size_t print_element(struct element *elem, int level, void *data)
 		struct structure *sub;
 		int j;
 
-		sub = &structures[elem->type -
-				  STRUCT_BASE];
-		printf("struct %s %s (size = %d bytes)\n",
-		       sub->name, elem->name, sub->size);
+		sub = &structures[elem->type - STRUCT_BASE];
 
 		for (j = 0; j < sub->n_elements; j++) {
-			len += print_element(&sub->elements[j],
-					     level + 1, pos);
-			pos += len;
+			print_element(&sub->elements[j], curr_name, pos);
+			if (sub->elements[j].type < STRUCT_BASE)
+				pos += sub->elements[j].array_size *
+					types[sub->elements[j].type].size;
+			else
+				pos += sub->elements[j].array_size *
+					structures[sub->elements[j].type - STRUCT_BASE].size;
 		}
+
 	}
 
-	return len;
+	free(curr_name);
+
+out:
+	return ret;
 }
 
 static void print_structs(void *buffer, struct structure *structure)
 {
 	int i, len;
-	char *pos = buffer;
+	char *location = buffer;
 
 	for (i = 0; i < structure->n_elements; i++) {
 		len = print_element(&structure->elements[i],
-				    1, pos);
-		if (pos)
-			pos += len;
+				    structure->name, location);
+		location += len;
 	}
 }
 
@@ -683,6 +687,7 @@ static void get_value(void *buffer, struct structure *structure,
 {
 	int pos;
 	struct element *element;
+	char *elim;
 
 	pos = get_element_pos(structure, argument, &element);
 	if (pos < 0) {
@@ -690,14 +695,14 @@ static void get_value(void *buffer, struct structure *structure,
 		return;
 	}
 
-	if (element->type >= STRUCT_BASE) {
-		fprintf(stderr,
-			"getting entire structures not supported yet.\n");
-		return;
-	}
+	/* change argument into parent by removing the last element name */
+	elim = strrchr(argument, '.');
+	if (elim)
+		*elim = '\0';
+	else
+		argument = NULL;
 
-	printf("%s = ", argument);
-	print_data(element, ((char *)buffer) + pos, 0);
+	print_element(element, argument, ((char *)buffer) + pos);
 }
 
 static int set_value(void *buffer, struct structure *structure,
@@ -711,7 +716,7 @@ static int set_value(void *buffer, struct structure *structure,
 	split_point = strchr(argument, '=');
 	if (!split_point) {
 		fprintf(stderr,
-			"--set requires the format <element>[.<element>...]=<value>");
+			"--set requires the format <element>[.<element>...]=<value>\n");
 		ret = -1;
 		goto out;
 	}

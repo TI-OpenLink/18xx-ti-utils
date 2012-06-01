@@ -231,3 +231,82 @@ corruption checks: magic, version and checksum.
 
     Expected result: the tool should return an error specifying all
     the lines that contained too-long arrays.
+
+
+4. GETTING VALUES
+-----------------
+
+4.1 Get the value of an element
+
+    Make sure you have a valid input file (test-4.1-conf.bin) and run:
+
+	./wlconf -g core.hangover.quiet_time -i tests/test-4.1-conf.bin
+
+    Expected result: the tool should return the name of the element
+    followed by the correct value: "core.hangover.quiet_time = 0x04"
+
+4.2 Ensure that -g and -C are compatible
+
+    Make sure you have a valid input file (test-4.2-conf.bin) and run:
+
+	./wlconf -g core.hangover.quiet_time -i tests/test-4.2-conf.bin > tests/result-4.2.conf
+
+    Then write the result back with the following command:
+
+	./wlconf -C tests/result-4.2.conf -o tests/result-4.2-conf.bin
+
+    And read it again:
+
+	./wlconf -g core.hangover.quiet_time -i	tests/result-4.2-conf.bin
+
+    Expected result: the tool should return the same value as it
+    returned after the first command: "core.hangover.quiet_time = 0x04"
+
+4.3 Try to get an invalid value
+
+    Make sure you have a valid input file (test-4.3-conf.bin) and run:
+
+	./wlconf -g core.hangover.quiet -i tests/test-4.3-conf.bin
+
+    Expected result: the tool should return an error saying that the
+    element could not be found.  No output file should be generated.
+
+4.4 Get an entire structure
+
+    Make sure you have a valid input file (test-4.4-conf.bin) and run:
+
+	./wlconf -g core.sched_scan -i tests/test-4.4-conf.bin
+
+    Expected result: the tool should return a list of all elements
+    inside the core.sched_scan structure and their respective values:
+
+	core.sched_scan.base_dwell_time = 0x00001d4c
+	core.sched_scan.max_dwell_time_delta = 0x000057e4
+	core.sched_scan.dwell_time_delta_per_probe = 0x000007d0
+	core.sched_scan.dwell_time_delta_per_probe_5 = 0x0000015e
+	core.sched_scan.dwell_time_passive = 0x000186a0
+	core.sched_scan.dwell_time_dfs = 0x000249f0
+	core.sched_scan.num_probe_reqs = 0x02
+	core.sched_scan.rssi_threshold = 0xa6
+	core.sched_scan.snr_threshold = 0x00
+
+4.5 Get a structure and read back the generated output
+
+    Make sure you have a valid input file (test-4.5-conf.bin) and run:
+
+	./wlconf -g core.sched_scan -i tests/test-4.5-conf.bin > tests/result-4.5-1.conf
+
+    Then write the result back with the following command:
+
+	./wlconf -C tests/result-4.5-1.conf -o tests/result-4.5-conf.bin
+
+    And read it again:
+
+	./wlconf -g core.sched_scan -i tests/result-4.2-conf.bin > tests/result-4.5-2.conf
+
+    Compare the output configuration files:
+
+	diff -u tests/result-4.5-1.conf tests/result-4.5-2.conf
+
+    Expected result: there should be no difference between the
+    result-4.5-1.conf and result-4.5-2.conf files.
