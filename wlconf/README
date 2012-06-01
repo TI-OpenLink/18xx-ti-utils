@@ -87,8 +87,6 @@ KNOWN ISSUES AND LIMITATIONS
 
 * Only the first struct in an array of structs can be set;
 
-* The dump and print commands are buggy;
-
 * It's too cumbersome and prone to errors to let the end-users parse
   the source header file.  Thus, a default struct.bin file with the
   current driver configuration structure is provided.  This binary
@@ -121,8 +119,6 @@ TODO
 ----
 
 * Allow setting values in any structure inside an array of structs;
-
-* Fix print and dump;
 
 * Improve type-checking in the --set command;
 

@@ -79,8 +79,6 @@ struct type types[] = {
 #define DEFAULT_MAGIC_ELEMENT	"header.magic"
 #define DEFAULT_VERSION_ELEMENT	"header.version"
 #define DEFAULT_CHKSUM_ELEMENT	"header.checksum"
-#define MAX_INDENT		8
-#define INDENT_CHAR		"\t"
 
 #define STRUCT_BASE		1000
 
@@ -432,19 +430,13 @@ out:
 	return ret;
 }
 
-static size_t print_data(struct element *elem, void *data, int level)
+static void print_data(struct element *elem, void *data)
 {
 	uint8_t *u8;
 	uint16_t *u16;
 	uint32_t *u32;
 	int i;
 	char *pos = data;
-	char indent[MAX_INDENT];
-
-	indent[0] = '\0';
-
-	for (i = 0; i < level; i++)
-		strncat(indent, INDENT_CHAR, sizeof(indent));
 
 	for (i = 0; i < elem->array_size; i++) {
 		switch (types[elem->type].size) {
@@ -472,8 +464,6 @@ static size_t print_data(struct element *elem, void *data, int level)
 	}
 
 	printf("\n");
-
-	return types[elem->type].size * elem->array_size;
 }
 
 static int set_data(struct element *elem, void *buffer, void *data)
@@ -518,19 +508,15 @@ static int print_element(struct element *elem, char *parent, void *data)
 	}
 
 	if (elem->type < STRUCT_BASE) {
-		printf("%s", curr_name);
 		if (data) {
-			if (elem->array_size) {
-				printf(" = ");
-				print_data(elem, pos, 0);
-				pos += elem->array_size *
-					types[elem->type].size;
-			} else {
-				printf("\n");
-			}
+			printf("%s = ", curr_name);
+			print_data(elem, pos);
+			pos += elem->array_size *
+				types[elem->type].size;
 		} else {
-			printf(" (size = %d bytes)\n",
-			       types[elem->type].size * elem->array_size);
+			printf("\t%s %s[%d]\n",
+			       types[elem->type].name, elem->name,
+			       elem->array_size);
 		}
 	} else {
 		struct structure *sub;
@@ -538,8 +524,15 @@ static int print_element(struct element *elem, char *parent, void *data)
 
 		sub = &structures[elem->type - STRUCT_BASE];
 
+		if (!data)
+			printf("struct %s {\n", sub->name);
+
 		for (j = 0; j < sub->n_elements; j++) {
 			print_element(&sub->elements[j], curr_name, pos);
+
+			if (!data)
+				continue;
+
 			if (sub->elements[j].type < STRUCT_BASE)
 				pos += sub->elements[j].array_size *
 					types[sub->elements[j].type].size;
@@ -548,24 +541,14 @@ static int print_element(struct element *elem, char *parent, void *data)
 					structures[sub->elements[j].type - STRUCT_BASE].size;
 		}
 
+		if (!data)
+			printf("} /* %s */\n", sub->name);
 	}
 
 	free(curr_name);
 
 out:
 	return ret;
-}
-
-static void print_structs(void *buffer, struct structure *structure)
-{
-	int i, len;
-	char *location = buffer;
-
-	for (i = 0; i < structure->n_elements; i++) {
-		len = print_element(&structure->elements[i],
-				    structure->name, location);
-		location += len;
-	}
 }
 
 static int read_file(const char *filename, void **buffer, size_t size)
@@ -714,7 +697,10 @@ static void get_value(void *buffer, struct structure *structure,
 		pos = 0;
 	}
 
-	print_element(element, argument, ((char *)buffer) + pos);
+	if (buffer)
+		buffer = ((char *)buffer) + pos;
+
+	print_element(element, argument, buffer);
 
 	free(root_element);
 }
@@ -1560,7 +1546,7 @@ int main(int argc, char **argv)
 		break;
 
 	case 'p':
-		print_structs(NULL, root_struct);
+		get_value(NULL, root_struct, NULL);
 		break;
 
 	default:

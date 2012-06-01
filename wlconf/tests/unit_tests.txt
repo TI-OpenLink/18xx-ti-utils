@@ -331,3 +331,16 @@ corruption checks: magic, version and checksum.
 
     Expected result: there should be no difference between the
     result-4.6-1.conf and result-4.6-2.conf files.
+
+4.7 Print the element tree structure with no data
+
+    Run the following command:
+
+	./wlconf -p > tests/result-4.7.struct
+
+    Then check that the output matches the pre-defined one:
+
+	diff -u tests/result-4.7.struct tests/test-4.7.struct
+
+    Expected result: there should be no difference between the
+    result-4.7.struct and test-4.7.struct files.
