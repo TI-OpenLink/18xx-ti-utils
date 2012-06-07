@@ -28,6 +28,16 @@
 #include "crc32.h"
 #include "wlconf.h"
 
+#ifdef ANDROID
+inline ssize_t getline(char **lineptr, size_t *n, FILE *stream)
+{
+	*lineptr = fgetln(stream, n);
+	if (*lineptr != NULL)
+		return (ssize_t)*n;
+	return (ssize_t) -1;
+}
+#endif
+
 static struct dict_entry *dict = NULL;
 static int n_dict_entries = 0;
 
