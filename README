@@ -377,13 +377,51 @@ antennas and RF in general is working properly.
 
 3. set the power 
  
-   calibrator wlan0 wl18xx_plt set_tx_power <output_power> <level> <band> 
+   calibrator wlan0 wl18xx_plt set_tx_power <output_power> <level> <band>
                  <primary_channel> <2nd_channel> <antenna> <non_serving_channel>
                   <channel_limitation> <frontend_limit> <gain_calculation>
                    <analog_gain_control_id> <post_dpd_gain>
 
-good default values are:
-calibrator wlan0 wl18xx_plt set_tx_power <out_power> 0 <band> <channel> <freq2ndChInd> 0 0 0 0 0 0 0
+   Where the following parameters can be used:
+
+	<output_power>			Desired power output supplied in
+					dBmX1000 at 125 resolution (1/8 dB),
+					i.e. 16.125[dBm] = 16125
+	<level>				Indicates which table to refer to (0-3)
+	<band>				0 = G band
+					1 = A band
+	<primary_channel>		Operation channel
+	<2nd_channel>			Select the 2nd channel in siso40
+					0 = below
+					1 = above
+	<antenna>			Used for Tx antenna select.
+					0 = auto mode
+					1 = TX1
+					2 = TX2
+					3 = Both TX1 & TX2
+	<non_serving_channel>		Will this level be used for
+					non serving channel
+	<channel_limitation>		Notifies the PHY FW when to discard
+					internal limits, disable only per
+					channel limits
+	<frontend_limit>		Notifies the PHY FW when to discard
+					external limits - disable per rate
+					limits when using external PA platform
+	<gain_calculation>		Used to determine one of three gain
+					calculation modes (debug only)
+					0 = normal operation
+					1 = debug mode
+					2 = override mode
+	<analog_gain_control_id>	When gainCalcMode is set to mode 3,
+					this indicator will be used to indicate
+					the user's chosen analog index
+	<post_dpd_gain>			sets the post DPD gain
+
+   Good default values are:
+	calibrator wlan0 wl18xx_plt set_tx_power <out_power> 0 <band> <channel> <freq2ndChInd> 0 0 0 0 1 0 0
+
+   For example, to set the power to 20dBm @ channel 11 use the following command:
+	calibrator wlan0 wl18xx_plt set_tx_power 20000 0 0 11 0 0 0 0 0 1 0 0
 
 4. start transmit (see start TX)
    
