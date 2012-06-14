@@ -1406,10 +1406,87 @@ static int find_section(const char *l, enum wl1271_ini_section *st, int *cntr,
 	return 1;
 }
 
+static const char* ini_section_str(enum wl1271_ini_section section)
+{
+	const char *section_str;
+
+	switch(section) {
+
+	case GENERAL_PRMS:
+		section_str = "GENERAL_PARAMS";
+		break;
+
+	case FEM_PRMS:
+		section_str = "FEM_PARAMS";
+		break;
+
+	case BAND2_PRMS:
+		section_str = "BAND2_PARAMS";
+		break;
+
+	case BAND5_PRMS:
+		section_str = "BAND5_PARAMS";
+		break;
+
+	case FEM0_BAND2_PRMS:
+		section_str = "FEM0_BAND2_PARAMS";
+		break;
+
+	case FEM1_BAND2_PRMS:
+		section_str = "FEM1_BAND2_PARAMS";
+		break;
+
+	case FEM2_BAND2_PRMS:
+		section_str = "FEM2_BAND2_PARAMS";
+		break;
+
+	case FEM3_BAND2_PRMS:
+		section_str = "FEM3_BAND2_PARAMS";
+		break;
+
+	case FEM0_BAND5_PRMS:
+		section_str = "FEM0_BAND5_PARAMS";
+		break;
+
+	case FEM1_BAND5_PRMS:
+		section_str = "FEM1_BAND5_PARAMS";
+		break;
+
+	case FEM2_BAND5_PRMS:
+		section_str = "FEM2_BAND5_PARAMS";
+		break;
+
+	case FEM3_BAND5_PRMS:
+		section_str = "FEM3_BAND5_PARAMS";
+		break;
+
+	case UKNOWN_SECTION:
+	default:
+		section_str = "UNKNOWN_SECTION";
+		break;
+	}
+
+	return section_str;
+}
+
 static int ini_parse_line(char *l, struct wl12xx_common *cmn)
 {
 	static enum wl1271_ini_section status;
 	static int cntr;
+
+	if (cntr) {
+		/*
+		 * Recovery mode -
+		 *  Check if didn't finish current section and we are already in
+		 *  another one. This can happen in case of optional params in section.
+		 */
+		enum wl1271_ini_section curr_section = status;
+		if (!find_section(l, &status, &cntr, cmn)) {
+			printf("Some params missing in ini section %s moving to section %s\n",
+				ini_section_str(curr_section),
+				ini_section_str(status));
+		}
+	}
 
 	if (!cntr && find_section(l, &status, &cntr, cmn)) {
 		fprintf(stderr, "Uknown ini section %s\n", l);
