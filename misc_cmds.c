@@ -278,7 +278,7 @@ static int set_fem_manuf(struct nl80211_state *state, struct nl_cb *cb,
 	return 0;
 }
 
-COMMAND(set, fem_manuf, "<0|1> [<nvs file>]", 0, 0, CIB_NONE, set_fem_manuf,
+COMMAND(set, fem_manuf, "<0|1|2|3> [<nvs file>]", 0, 0, CIB_NONE, set_fem_manuf,
 	"Set FEM manufacturer");
 
 static int get_drv_info(struct nl80211_state *state, struct nl_cb *cb,

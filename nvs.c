@@ -114,11 +114,10 @@ int nvs_set_mac(char *nvsfile, char *mac)
 	return 0;
 }
 
-
-
 int nvs_fill_radio_params(int fd, struct wl12xx_ini *ini, char *buf)
 {
 	struct wl1271_nvs_ini gp;
+	int fem_idx;
 
 	if (ini) {
 		/* Reset local NVS Radio Params */
@@ -131,16 +130,37 @@ int nvs_fill_radio_params(int fd, struct wl12xx_ini *ini, char *buf)
 		if (gp.general_params.dual_mode_select)
 			gp.stat_radio_params_5 = ini->ini1271.stat_radio_params_5;
 
-		gp.dyn_radio_params_2[0].params =
-			ini->ini1271.dyn_radio_params_2[0].params;
-		gp.dyn_radio_params_2[1].params =
-			ini->ini1271.dyn_radio_params_2[1].params;
+		if (gp.general_params.tx_bip_fem_auto_detect) {
+			/* For backward compatibility we fill the first 2 FEM entries */
+			gp.dyn_radio_params_2[0].params =
+				ini->ini1271.dyn_radio_params_2[0].params;
+			gp.dyn_radio_params_2[1].params =
+				ini->ini1271.dyn_radio_params_2[1].params;
 
-		if (gp.general_params.dual_mode_select) {
-			gp.dyn_radio_params_5[0].params =
-				ini->ini1271.dyn_radio_params_5[0].params;
-			gp.dyn_radio_params_5[1].params =
-				ini->ini1271.dyn_radio_params_5[1].params;
+			if (gp.general_params.dual_mode_select) {
+				gp.dyn_radio_params_5[0].params =
+					ini->ini1271.dyn_radio_params_5[0].params;
+				gp.dyn_radio_params_5[1].params =
+					ini->ini1271.dyn_radio_params_5[1].params;
+			}
+		}
+		else {
+			/*
+			 * Translate to NVS FEM entry
+			 *   In case of fem manufacturer 1 (TQS) use FEM idx 1 to maintain
+			 *   backward compatibilty. For all other types use idx 0
+			 */
+			fem_idx = WL12XX_FEM_TO_NVS_ENTRY(
+						  gp.general_params.tx_bip_fem_manufacturer);
+
+			gp.dyn_radio_params_2[fem_idx].params =
+				ini->ini1271.dyn_radio_params_2
+					[gp.general_params.tx_bip_fem_manufacturer].params;
+
+			if (gp.general_params.dual_mode_select)
+				gp.dyn_radio_params_5[fem_idx].params =
+					ini->ini1271.dyn_radio_params_5
+						[gp.general_params.tx_bip_fem_manufacturer].params;
 		}
 
 		write(fd, (const void *)&gp, sizeof(gp));
@@ -155,6 +175,7 @@ int nvs_fill_radio_params(int fd, struct wl12xx_ini *ini, char *buf)
 static int nvs_fill_radio_params_128x(int fd, struct wl12xx_ini *ini, char *buf)
 {
 	struct wl128x_nvs_ini gp;
+	int fem_idx;
 
 	if (ini) {
 		/* Reset local NVS Radio Params */
@@ -168,17 +189,37 @@ static int nvs_fill_radio_params_128x(int fd, struct wl12xx_ini *ini, char *buf)
 		if (gp.general_params.dual_mode_select)
 			gp.stat_radio_params_5 = ini->ini128x.stat_radio_params_5;
 
-		/* For backward compatibility we fill the first 2 FEM entries */
-		gp.dyn_radio_params_2[0].params =
-			ini->ini128x.dyn_radio_params_2[0].params;
-		gp.dyn_radio_params_2[1].params =
-			ini->ini128x.dyn_radio_params_2[1].params;
+		if (gp.general_params.tx_bip_fem_auto_detect) {
+			/* For backward compatibility we fill the first 2 FEM entries */
+			gp.dyn_radio_params_2[0].params =
+				ini->ini128x.dyn_radio_params_2[0].params;
+			gp.dyn_radio_params_2[1].params =
+				ini->ini128x.dyn_radio_params_2[1].params;
 
-		if (gp.general_params.dual_mode_select) {
-			gp.dyn_radio_params_5[0].params =
-				ini->ini128x.dyn_radio_params_5[0].params;
-			gp.dyn_radio_params_5[1].params =
-				ini->ini128x.dyn_radio_params_5[1].params;
+			if (gp.general_params.dual_mode_select) {
+				gp.dyn_radio_params_5[0].params =
+					ini->ini128x.dyn_radio_params_5[0].params;
+				gp.dyn_radio_params_5[1].params =
+					ini->ini128x.dyn_radio_params_5[1].params;
+			}
+		}
+		else {
+			/*
+			 * Translate to NVS FEM entry
+			 *   In case of fem manufacturer 1 (TQS) use FEM idx 1 to maintain
+			 *   backward compatibilty. For all other types use idx 0
+			 */
+			fem_idx = WL12XX_FEM_TO_NVS_ENTRY(
+						  gp.general_params.tx_bip_fem_manufacturer);
+
+			gp.dyn_radio_params_2[fem_idx].params =
+				ini->ini128x.dyn_radio_params_2
+				[gp.general_params.tx_bip_fem_manufacturer].params;
+
+			if (gp.general_params.dual_mode_select)
+				gp.dyn_radio_params_5[fem_idx].params =
+					ini->ini128x.dyn_radio_params_5
+					[gp.general_params.tx_bip_fem_manufacturer].params;
 		}
 
 		write(fd, (const void *)&gp, sizeof(gp));
@@ -1135,9 +1176,9 @@ int get_fem_nr(int autodetect, int manuf, int *femcnt, int *femi)
 	}
 	else {
 		*femcnt = 1;
-		if(manuf >= WL12XX_NVS_FEM_MODULE_COUNT) {
+		if(manuf >= WL1271_INI_FEM_MODULE_COUNT) {
 			fprintf(stderr, "FEM index out of bounds (%d > %d)\n", manuf,
-				WL12XX_NVS_FEM_MODULE_COUNT);
+				WL1271_INI_FEM_MODULE_COUNT);
 			return 1;
 		}
 

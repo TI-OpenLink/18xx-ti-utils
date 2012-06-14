@@ -1034,20 +1034,20 @@ static int plt_autocalibrate(struct nl80211_state *state, struct nl_cb *cb,
 		goto out_removenvs;
 	}
 
-	fems_parsed = cmn.fem0_bands + cmn.fem1_bands;
+	fems_parsed = cmn.fem0_bands + cmn.fem1_bands + cmn.fem2_bands + cmn.fem3_bands;
 
 	/* Get nr bands from parsed ini */
 	single_dual = ini_get_dual_mode(&cmn);
 
 	if (single_dual == 0) {
-		if (fems_parsed < 1 || fems_parsed > 2) {
+		if (fems_parsed < 1 || fems_parsed > 4) {
 			fprintf(stderr, "Incorrect number of FEM sections %d for single mode\n",
 			        fems_parsed);
 			return 1;
 		}
 	}
 	else if (single_dual == 1) {
-		if (fems_parsed < 2 && fems_parsed > 4) {
+		if (fems_parsed < 2 && fems_parsed > 8) {
 			fprintf(stderr, "Incorrect number of FEM sections %d for dual mode\n",
 			        fems_parsed);
 			return 1;
@@ -1060,8 +1060,15 @@ static int plt_autocalibrate(struct nl80211_state *state, struct nl_cb *cb,
 	}
 
 	/* I suppose you can have one FEM with 2.4 only and one in dual band
-	   but it's more likely a mistake */
-	if ((single_dual + 1) * (cmn.auto_fem + 1) != fems_parsed) {
+	   but it's more likely a mistake.
+
+	   In normal situation we have:
+	   ----------------------------
+	   Single Band Manual   - 1 FEM
+	   Dual   Band Manual   - 2 FEMs
+	   Single Band Auto Fem - 4 FEMs
+	   Dual   Band Auto Fem - 8 FEMs */
+	if ((single_dual + 1) * (cmn.auto_fem * 3 + 1) != fems_parsed) {
 		printf("WARNING: %d FEMS for %d bands with autofem %s looks "
 			"like a strange configuration\n",
 			fems_parsed, single_dual + 1,
@@ -1114,6 +1121,12 @@ static int plt_autocalibrate(struct nl80211_state *state, struct nl_cb *cb,
 	}
 	if (cmn.fem1_bands) {
 		printf("FEM1 has %d bands. ", cmn.fem1_bands);
+	}
+	if (cmn.fem2_bands) {
+		printf("FEM2 has %d bands. ", cmn.fem2_bands);
+	}
+	if (cmn.fem3_bands) {
+		printf("FEM3 has %d bands. ", cmn.fem3_bands);
 	}
 
 	printf("AutoFEM is %s. ", cmn.auto_fem ? "on" : "off");
