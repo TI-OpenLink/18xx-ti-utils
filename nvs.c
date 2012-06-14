@@ -1135,9 +1135,9 @@ int get_fem_nr(int autodetect, int manuf, int *femcnt, int *femi)
 	}
 	else {
 		*femcnt = 1;
-		if(manuf >= WL1271_INI_FEM_MODULE_COUNT) {
+		if(manuf >= WL12XX_NVS_FEM_MODULE_COUNT) {
 			fprintf(stderr, "FEM index out of bounds (%d > %d)\n", manuf,
-				WL1271_INI_FEM_MODULE_COUNT);
+				WL12XX_NVS_FEM_MODULE_COUNT);
 			return 1;
 		}
 

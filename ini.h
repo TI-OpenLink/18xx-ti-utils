@@ -187,15 +187,18 @@ struct wl128x_ini_fem_params_5 {
 
 /* NVS data structure */
 #define WL1271_INI_NVS_SECTION_SIZE		     468
-#define WL1271_INI_FEM_MODULE_COUNT                  2
+
+/* We have four FEM module types: 0-RFMD, 1-TQS, 2-SKW, 3-TQS_HP */
+#define WL1271_INI_FEM_MODULE_COUNT                  4
 
 #define WL1271_INI_LEGACY_NVS_FILE_SIZE              800
-
-#define WL12XX_NVS_FEM_MODULE_COUNT                  2
 /*
- * Map ini FEM type 1 to NVS entry 1, the rest to entry 0 -
- *  this is in preperation for future new FEM types
+ * In NVS we only store two FEM module entries -
+ *	  FEM modules 0,2,3 are stored in entry 0
+ *	  FEM module 1 is stored in entry 1
  */
+#define WL12XX_NVS_FEM_MODULE_COUNT                  2
+
 #define WL12XX_FEM_TO_NVS_ENTRY(ini_fem_module)      \
 	((ini_fem_module) == 1 ? 1 : 0)
 
@@ -289,8 +292,12 @@ enum wl1271_ini_section {
 	BAND5_PRMS,
 	FEM0_BAND2_PRMS,
 	FEM1_BAND2_PRMS,
+	FEM2_BAND2_PRMS,
+	FEM3_BAND2_PRMS,
 	FEM0_BAND5_PRMS,
-	FEM1_BAND5_PRMS
+	FEM1_BAND5_PRMS,
+	FEM2_BAND5_PRMS,
+	FEM3_BAND5_PRMS
 };
 
 enum wl12xx_arch {
@@ -313,6 +320,8 @@ struct wl12xx_common {
 	unsigned char auto_fem;
 	unsigned int fem0_bands;
 	unsigned int fem1_bands;
+	unsigned int fem2_bands;
+	unsigned int fem3_bands;
 	struct wl12xx_parse_ops *parse_ops;
 	struct wl12xx_nvs_ops   *nvs_ops;
 	struct wl12xx_ini ini;
@@ -327,8 +336,12 @@ struct wl12xx_parse_ops {
 	int (*prs_band5_prms)(char *l, struct wl12xx_ini *p);
 	int (*prs_fem0_band2_prms)(char *l, struct wl12xx_ini *p);
 	int (*prs_fem1_band2_prms)(char *l, struct wl12xx_ini *p);
+	int (*prs_fem2_band2_prms)(char *l, struct wl12xx_ini *p);
+	int (*prs_fem3_band2_prms)(char *l, struct wl12xx_ini *p);
 	int (*prs_fem0_band5_prms)(char *l, struct wl12xx_ini *p);
 	int (*prs_fem1_band5_prms)(char *l, struct wl12xx_ini *p);
+	int (*prs_fem2_band5_prms)(char *l, struct wl12xx_ini *p);
+	int (*prs_fem3_band5_prms)(char *l, struct wl12xx_ini *p);
 	int (*is_dual_mode)(struct wl12xx_ini *p);
 };
 
