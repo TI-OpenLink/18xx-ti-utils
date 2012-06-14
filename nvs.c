@@ -1142,7 +1142,9 @@ int get_fem_nr(int autodetect, int manuf, int *femcnt, int *femi)
 		}
 
 		*femi = manuf;
-		printf("#Fem autodetect is off. Fem nr used is %d\n", *femi);
+		printf("#Fem autodetect is off. FEM manufacturer=%d "
+			"Fem entry used is %d\n",
+			manuf, WL12XX_FEM_TO_NVS_ENTRY(manuf));
 	}
 	return 0;
 }

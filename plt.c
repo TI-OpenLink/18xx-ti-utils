@@ -221,7 +221,7 @@ static int calib_valid_handler(struct nl_msg *msg, void *arg)
 	prms = (struct wl1271_cmd_cal_p2g *)nla_data(td[WL1271_TM_ATTR_DATA]);
 
 	if (prms->radio_status) {
-		fprintf(stderr, "Fail to calibrate ith radio status (%d)\n",
+		fprintf(stderr, "Fail to calibrate with radio status (%d)\n",
 			(signed short)prms->radio_status);
 		return 2;
 	}
