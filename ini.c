@@ -653,6 +653,62 @@ static int parse_fem0_band5_prms(char *l, struct wl12xx_ini *p)
 	return 1;
 }
 
+static int parse_fem0_band5_prms_128x(char *l, struct wl12xx_ini *p)
+{
+	char *name, *val;
+	struct wl128x_ini_fem_params_5 *gp =
+		&(p->ini128x.dyn_radio_params_5[0].params);
+
+	if (split_line(l, &name, &val))
+		return 1;
+
+	COMPARE_N_ADD2("FEM0_TxBiPReferencePDvoltage_5G", l, val,
+		&gp->tx_bip_ref_pd_voltage);
+
+	COMPARE_N_ADD("FEM0_TxBiPReferencePower_5G", l, val,
+		&gp->tx_bip_ref_power);
+
+	COMPARE_N_ADD("FEM0_TxBiPOffsetdB_5G", l, val,
+		&gp->tx_bip_ref_offset);
+
+	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_5G_Normal", l, val,
+		&gp->tx_per_rate_pwr_limits_normal);
+
+	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_5G_Degraded", l, val,
+		&gp->tx_per_rate_pwr_limits_degraded);
+
+	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_5G_Extreme", l, val,
+		&gp->tx_per_rate_pwr_limits_extreme);
+
+	COMPARE_N_ADD("FEM0_DegradedLowToNormalThr_5G", l, val,
+		&gp->degraded_low_to_normal_thr);
+
+	COMPARE_N_ADD("FEM0_NormalToDegradedHighThr_5G", l, val,
+		&gp->normal_to_degraded_high_thr);
+
+	COMPARE_N_ADD("FEM0_TxPerChannelPowerLimits_5G_OFDM", l, val,
+		&gp->tx_per_chan_pwr_limits_ofdm);
+
+	COMPARE_N_ADD("FEM0_TxPDVsRateOffsets_5G", l, val,
+		&gp->tx_pd_vs_rate_offsets);
+
+	COMPARE_N_ADD("FEM0_TxPDVsChannelOffsets_5G", l, val,
+		&gp->tx_pd_vs_chan_offsets);
+
+	COMPARE_N_ADD("FEM0_TxPDVsTemperature_5G", l, val,
+		&gp->tx_pd_vs_temperature);
+
+	COMPARE_N_ADD("FEM0_TxIbiasTable_5G", l, val,
+		&gp->tx_ibias);
+
+	COMPARE_N_ADD("FEM0_RxFemInsertionLoss_5G", l, val,
+		&gp->rx_fem_insertion_loss);
+
+	fprintf(stderr, "Unable to parse: (%s)\n", l);
+
+	return 1;
+}
+
 static int parse_fem1_band5_prms(char *l, struct wl12xx_ini *p)
 {
 	char *name, *val;
@@ -759,62 +815,6 @@ static int parse_fem1_band5_prms_128x(char *l, struct wl12xx_ini *p)
 	return 1;
 }
 
-static int parse_fem0_band5_prms_128x(char *l, struct wl12xx_ini *p)
-{
-	char *name, *val;
-	struct wl128x_ini_fem_params_5 *gp =
-		&(p->ini128x.dyn_radio_params_5[0].params);
-
-	if (split_line(l, &name, &val))
-		return 1;
-
-	COMPARE_N_ADD2("FEM0_TxBiPReferencePDvoltage_5G", l, val,
-		&gp->tx_bip_ref_pd_voltage);
-
-	COMPARE_N_ADD("FEM0_TxBiPReferencePower_5G", l, val,
-		&gp->tx_bip_ref_power);
-
-	COMPARE_N_ADD("FEM0_TxBiPOffsetdB_5G", l, val,
-		&gp->tx_bip_ref_offset);
-
-	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_5G_Normal", l, val,
-		&gp->tx_per_rate_pwr_limits_normal);
-
-	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_5G_Degraded", l, val,
-		&gp->tx_per_rate_pwr_limits_degraded);
-
-	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_5G_Extreme", l, val,
-		&gp->tx_per_rate_pwr_limits_extreme);
-
-	COMPARE_N_ADD("FEM0_DegradedLowToNormalThr_5G", l, val,
-		&gp->degraded_low_to_normal_thr);
-
-	COMPARE_N_ADD("FEM0_NormalToDegradedHighThr_5G", l, val,
-		&gp->normal_to_degraded_high_thr);
-
-	COMPARE_N_ADD("FEM0_TxPerChannelPowerLimits_5G_OFDM", l, val,
-		&gp->tx_per_chan_pwr_limits_ofdm);
-
-	COMPARE_N_ADD("FEM0_TxPDVsRateOffsets_5G", l, val,
-		&gp->tx_pd_vs_rate_offsets);
-
-	COMPARE_N_ADD("FEM0_TxPDVsChannelOffsets_5G", l, val,
-		&gp->tx_pd_vs_chan_offsets);
-
-	COMPARE_N_ADD("FEM0_TxPDVsTemperature_5G", l, val,
-		&gp->tx_pd_vs_temperature);
-
-	COMPARE_N_ADD("FEM0_TxIbiasTable_5G", l, val,
-		&gp->tx_ibias);
-
-	COMPARE_N_ADD("FEM0_RxFemInsertionLoss_5G", l, val,
-		&gp->rx_fem_insertion_loss);
-
-	fprintf(stderr, "Unable to parse: (%s)\n", l);
-
-	return 1;
-}
-
 static int parse_fem_prms_128x(char *l, struct wl12xx_ini *p)
 {
 	char *name, *val;
@@ -895,10 +895,11 @@ static int find_section(const char *l, enum wl1271_ini_section *st, int *cntr,
 		return 0;
 	}
 
-	if (strncmp("FEM1_TXBiPReferencePDvoltage_5G", l, 31) == 0 ||
-		strncmp("FEM1_TxBiPReferencePDvoltage_5G", l, 31) == 0) {
-		*st = FEM1_BAND5_PRMS;
-		cmn->fem1_bands++;
+
+	if (strncmp("FEM0_TXBiPReferencePDvoltage_5G", l, 31) == 0 ||
+		strncmp("FEM0_TxBiPReferencePDvoltage_5G", l, 31) == 0) {
+		*st = FEM0_BAND5_PRMS;
+		cmn->fem0_bands++;
 		if (arch == WL128X_ARCH)
 			*cntr = 14;
 		else
@@ -906,11 +907,10 @@ static int find_section(const char *l, enum wl1271_ini_section *st, int *cntr,
 
 		return 0;
 	}
-
-	if (strncmp("FEM0_TXBiPReferencePDvoltage_5G", l, 31) == 0 ||
-		strncmp("FEM0_TxBiPReferencePDvoltage_5G", l, 31) == 0) {
-		*st = FEM0_BAND5_PRMS;
-		cmn->fem0_bands++;
+	if (strncmp("FEM1_TXBiPReferencePDvoltage_5G", l, 31) == 0 ||
+		strncmp("FEM1_TxBiPReferencePDvoltage_5G", l, 31) == 0) {
+		*st = FEM1_BAND5_PRMS;
+		cmn->fem1_bands++;
 		if (arch == WL128X_ARCH)
 			*cntr = 14;
 		else
