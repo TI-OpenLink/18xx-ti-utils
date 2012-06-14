@@ -118,23 +118,35 @@ int nvs_set_mac(char *nvsfile, char *mac)
 
 int nvs_fill_radio_params(int fd, struct wl12xx_ini *ini, char *buf)
 {
-	size_t size;
-	struct wl1271_ini *gp;
+	struct wl1271_nvs_ini gp;
 
-	if (ini)
-		gp = &ini->ini1271;
+	if (ini) {
+		/* Reset local NVS Radio Params */
+		memset(&gp, 0, sizeof(gp));
 
-	size  = sizeof(struct wl1271_ini);
+		/* Copy from INI to NVS */
+		gp.general_params      = ini->ini1271.general_params;
+		gp.stat_radio_params_2 = ini->ini1271.stat_radio_params_2;
 
-	if (ini) {	/* for reference NVS */
-		unsigned char *c = (unsigned char *)gp;
-		size_t i;
+		if (gp.general_params.dual_mode_select)
+			gp.stat_radio_params_5 = ini->ini1271.stat_radio_params_5;
 
-		for (i = 0; i < size; i++)
-			write(fd, c++, 1);
+		gp.dyn_radio_params_2[0].params =
+			ini->ini1271.dyn_radio_params_2[0].params;
+		gp.dyn_radio_params_2[1].params =
+			ini->ini1271.dyn_radio_params_2[1].params;
+
+		if (gp.general_params.dual_mode_select) {
+			gp.dyn_radio_params_5[0].params =
+				ini->ini1271.dyn_radio_params_5[0].params;
+			gp.dyn_radio_params_5[1].params =
+				ini->ini1271.dyn_radio_params_5[1].params;
+		}
+
+		write(fd, (const void *)&gp, sizeof(gp));
 	} else {
 		char *p = buf + 0x1D4;
-		write(fd, (const void *)p, size);
+		write(fd, (const void *)p, sizeof(gp));
 	}
 
 	return 0;
@@ -142,21 +154,37 @@ int nvs_fill_radio_params(int fd, struct wl12xx_ini *ini, char *buf)
 
 static int nvs_fill_radio_params_128x(int fd, struct wl12xx_ini *ini, char *buf)
 {
-	int size;
-	struct wl128x_ini *gp = &ini->ini128x;
+	struct wl128x_nvs_ini gp;
 
-	size  = sizeof(struct wl128x_ini);
+	if (ini) {
+		/* Reset local NVS Radio Params */
+		memset(&gp, 0, sizeof(gp));
 
-	if (ini) {	/* for reference NVS */
-		unsigned char *c = (unsigned char *)gp;
-		int i;
+		/* Copy from INI to NVS */
+		gp.general_params         = ini->ini128x.general_params;
+		gp.fem_vendor_and_options = ini->ini128x.fem_vendor_and_options;
+		gp.stat_radio_params_2    = ini->ini128x.stat_radio_params_2;
 
-		for (i = 0; i < size; i++)
-			write(fd, c++, 1);
+		if (gp.general_params.dual_mode_select)
+			gp.stat_radio_params_5 = ini->ini128x.stat_radio_params_5;
 
+		/* For backward compatibility we fill the first 2 FEM entries */
+		gp.dyn_radio_params_2[0].params =
+			ini->ini128x.dyn_radio_params_2[0].params;
+		gp.dyn_radio_params_2[1].params =
+			ini->ini128x.dyn_radio_params_2[1].params;
+
+		if (gp.general_params.dual_mode_select) {
+			gp.dyn_radio_params_5[0].params =
+				ini->ini128x.dyn_radio_params_5[0].params;
+			gp.dyn_radio_params_5[1].params =
+				ini->ini128x.dyn_radio_params_5[1].params;
+		}
+
+		write(fd, (const void *)&gp, sizeof(gp));
 	} else {
 		char *p = buf + 0x1D4;
-		write(fd, p, size);
+		write(fd, (const void *)p, sizeof(gp));
 	}
 
 	return 0;
@@ -1108,7 +1136,8 @@ int get_fem_nr(int autodetect, int manuf, int *femcnt, int *femi)
 	else {
 		*femcnt = 1;
 		if(manuf >= WL1271_INI_FEM_MODULE_COUNT) {
-			fprintf(stderr, "FEM index out of bounds (%d > %d)\n", manuf, WL1271_INI_FEM_MODULE_COUNT);
+			fprintf(stderr, "FEM index out of bounds (%d > %d)\n", manuf,
+				WL1271_INI_FEM_MODULE_COUNT);
 			return 1;
 		}
 
@@ -1123,7 +1152,7 @@ int get_fem_nr(int autodetect, int manuf, int *femcnt, int *femi)
 int info_nvs_file(const char *nvs_file)
 {
 	char buf[BUF_SIZE_4_NVS_FILE];
-	int ret, i, femi, femcnt, maxfem;
+	int ret, i, femi, femcnt, maxfem, fem_idx;
 
 	int fd =  open(nvs_file, O_RDONLY, S_IRUSR | S_IWUSR);
 	if (fd < 0) {
@@ -1143,23 +1172,27 @@ int info_nvs_file(const char *nvs_file)
 	if (ret == sizeof(struct wl1271_nvs_file)) {
 		struct wl1271_nvs_file *nvs = (struct wl1271_nvs_file *) &buf;
 		printf("#Chip is 127x\n");
-		print_127x_general_params(&nvs->general_params);
-		print_127x_band2_params(&nvs->stat_radio_params_2);
-		if (nvs->general_params.dual_mode_select)
-			print_127x_band5_params(&nvs->stat_radio_params_5);
+		print_127x_general_params(&nvs->ini.general_params);
+		print_127x_band2_params(&nvs->ini.stat_radio_params_2);
+		if (nvs->ini.general_params.dual_mode_select)
+			print_127x_band5_params(&nvs->ini.stat_radio_params_5);
 
-		if( get_fem_nr(nvs->general_params.tx_bip_fem_auto_detect,
-		               nvs->general_params.tx_bip_fem_manufacturer,
+		if( get_fem_nr(nvs->ini.general_params.tx_bip_fem_auto_detect,
+		               nvs->ini.general_params.tx_bip_fem_manufacturer,
 		               &femcnt, &femi))
 			return 1;
 
 		maxfem = femcnt + femi;
 		for (i = femi; i < maxfem; i++) {
-			print_127x_fem_param2(i, &nvs->dyn_radio_params_2[i].params);
+			fem_idx = WL12XX_FEM_TO_NVS_ENTRY(i);
+
+			print_127x_fem_param2(i, &nvs->ini.
+				dyn_radio_params_2[fem_idx].params);
 			printf("\n");
 
-			if (nvs->general_params.dual_mode_select == 1) {
-				print_127x_fem_param5(femi, &nvs->dyn_radio_params_5[i].params);
+			if (nvs->ini.general_params.dual_mode_select == 1) {
+				print_127x_fem_param5(femi, &nvs->ini.
+					dyn_radio_params_5[fem_idx].params);
 				printf("\n");
 			}
 			femi++;
@@ -1168,25 +1201,29 @@ int info_nvs_file(const char *nvs_file)
 	else if (ret == sizeof(struct wl128x_nvs_file)) {
 		struct wl128x_nvs_file *nvs = (struct wl128x_nvs_file *) &buf;
 		printf("#Chip is 128x\n");
-		print_128x_general_params(&nvs->general_params);
-		print_128x_band2_params(&nvs->stat_radio_params_2);
-		if (nvs->general_params.dual_mode_select)
-			print_128x_band5_params(&nvs->stat_radio_params_5);
+		print_128x_general_params(&nvs->ini.general_params);
+		print_128x_band2_params(&nvs->ini.stat_radio_params_2);
+		if (nvs->ini.general_params.dual_mode_select)
+			print_128x_band5_params(&nvs->ini.stat_radio_params_5);
 
 		printf("# SECTION 2.1:   FEM parameters\n");
-		printf("FemVendorAndOptions = %02X\n\n", nvs->fem_vendor_and_options);
+		printf("FemVendorAndOptions = %02X\n\n", nvs->ini.fem_vendor_and_options);
 
-		if( get_fem_nr(nvs->general_params.tx_bip_fem_auto_detect,
-		               nvs->general_params.tx_bip_fem_manufacturer,
+		if( get_fem_nr(nvs->ini.general_params.tx_bip_fem_auto_detect,
+		               nvs->ini.general_params.tx_bip_fem_manufacturer,
 		               &femcnt, &femi))
 			return 1;
 
 		maxfem = femcnt + femi;
 		for (i = femi; i < maxfem; i++) {
-			print_128x_fem_param2(femi, &nvs->dyn_radio_params_2[femi].params);
+			fem_idx = WL12XX_FEM_TO_NVS_ENTRY(i);
+
+			print_128x_fem_param2(femi, &nvs->ini.
+				dyn_radio_params_2[fem_idx].params);
 			printf("\n");
-			if (nvs->general_params.dual_mode_select == 1) {
-				print_128x_fem_param5(femi, &nvs->dyn_radio_params_5[femi].params);
+			if (nvs->ini.general_params.dual_mode_select == 1) {
+				print_128x_fem_param5(femi, &nvs->ini.
+					dyn_radio_params_5[fem_idx].params);
 				printf("\n");
 			}
 			femi++;

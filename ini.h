@@ -191,11 +191,15 @@ struct wl128x_ini_fem_params_5 {
 
 #define WL1271_INI_LEGACY_NVS_FILE_SIZE              800
 
-struct wl1271_nvs_file {
-	/* NVS section */
-	unsigned char nvs[WL1271_INI_NVS_SECTION_SIZE];
+#define WL12XX_NVS_FEM_MODULE_COUNT                  2
+/*
+ * Map ini FEM type 1 to NVS entry 1, the rest to entry 0 -
+ *  this is in preperation for future new FEM types
+ */
+#define WL12XX_FEM_TO_NVS_ENTRY(ini_fem_module)      \
+	((ini_fem_module) == 1 ? 1 : 0)
 
-	/* INI section */
+struct wl1271_nvs_ini {
 	struct wl1271_ini_general_params general_params;
 	unsigned char padding1;
 	struct wl1271_ini_band_params_2 stat_radio_params_2;
@@ -203,20 +207,23 @@ struct wl1271_nvs_file {
 	struct {
 		struct wl1271_ini_fem_params_2 params;
 		unsigned char padding;
-	} dyn_radio_params_2[WL1271_INI_FEM_MODULE_COUNT];
+	} dyn_radio_params_2[WL12XX_NVS_FEM_MODULE_COUNT];
 	struct wl1271_ini_band_params_5 stat_radio_params_5;
 	unsigned char padding3;
 	struct {
 		struct wl1271_ini_fem_params_5 params;
 		unsigned char padding;
-	} dyn_radio_params_5[WL1271_INI_FEM_MODULE_COUNT];
+	} dyn_radio_params_5[WL12XX_NVS_FEM_MODULE_COUNT];
 } __attribute__((packed));
 
-struct wl128x_nvs_file {
+struct wl1271_nvs_file {
 	/* NVS section */
 	unsigned char nvs[WL1271_INI_NVS_SECTION_SIZE];
-
 	/* INI section */
+	struct wl1271_nvs_ini ini;
+} __attribute__((packed));
+
+struct wl128x_nvs_ini {
 	struct wl128x_ini_general_params general_params;
 	unsigned char fem_vendor_and_options;
 	struct wl128x_ini_band_params_2 stat_radio_params_2;
@@ -224,13 +231,20 @@ struct wl128x_nvs_file {
 	struct {
 		struct wl128x_ini_fem_params_2 params;
 		unsigned char padding;
-	} dyn_radio_params_2[WL1271_INI_FEM_MODULE_COUNT];
+	} dyn_radio_params_2[WL12XX_NVS_FEM_MODULE_COUNT];
 	struct wl128x_ini_band_params_5 stat_radio_params_5;
 	unsigned char padding3;
 	struct {
 		struct wl128x_ini_fem_params_5 params;
 		unsigned char padding;
-	} dyn_radio_params_5[WL1271_INI_FEM_MODULE_COUNT];
+	} dyn_radio_params_5[WL12XX_NVS_FEM_MODULE_COUNT];
+} __attribute__((packed));
+
+struct wl128x_nvs_file {
+	/* NVS section */
+	unsigned char nvs[WL1271_INI_NVS_SECTION_SIZE];
+	/* INI section */
+	struct wl128x_nvs_ini ini;
 } __attribute__((packed));
 
 struct wl1271_ini {
