@@ -38,6 +38,13 @@ inline ssize_t getline(char **lineptr, size_t *n, FILE *stream)
 }
 #endif
 
+inline void freeline(char *lineptr)
+{
+#ifndef ANDROID
+	free(lineptr);
+#endif
+}
+
 static struct dict_entry *dict = NULL;
 static int n_dict_entries = 0;
 
@@ -1087,7 +1094,7 @@ static int parse_dict(const char *filename)
 		dict = realloc(dict, ++n_dict_entries *
 			       sizeof(struct dict_entry));
 		if (!dict) {
-			free(line);
+			freeline(line);
 			ret = -1;
 			goto out_free;
 		}
@@ -1096,7 +1103,7 @@ static int parse_dict(const char *filename)
 		dict[n_dict_entries - 1].element_str = element_str;
 
 	cont:
-		free(line);
+		freeline(line);
 	};
 
 out_free:
@@ -1230,7 +1237,7 @@ static int parse_text_file(char *conf_buffer, struct structure *structure,
 		free(value_array);
 
 	cont:
-		free(line);
+		freeline(line);
 	};
 
 	regfree(&r);
