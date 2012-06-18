@@ -29,21 +29,37 @@
 #include "wlconf.h"
 
 #ifdef ANDROID
-inline ssize_t getline(char **lineptr, size_t *n, FILE *stream)
+static ssize_t getline(char **lineptr, size_t *n, FILE *stream)
 {
-	*lineptr = fgetln(stream, n);
-	if (*lineptr != NULL)
-		return (ssize_t)*n;
-	return (ssize_t) -1;
-}
-#endif
+	char *lptr;
+	ssize_t len;
 
-inline void freeline(char *lineptr)
-{
-#ifndef ANDROID
-	free(lineptr);
-#endif
+	lptr = fgetln(stream, (size_t*) &len);
+	if (lptr == NULL) {
+		len = -1;
+		goto out;
+	}
+
+	if (*lineptr == NULL || (ssize_t) *n < (len + 1)) {
+		/* needs reallocation */
+		char *newptr = realloc(*lineptr, len + 1);
+		if (newptr == NULL) {
+			/* realloc failed, we still have old lineptr and n */
+			len = -1;
+			goto out;
+		}
+
+		*lineptr = newptr;
+		*n = len + 1;
+	}
+
+	memcpy(*lineptr, lptr, len);
+	(*lineptr)[len] = '\0';
+
+out:
+	return len;
 }
+#endif
 
 static struct dict_entry *dict = NULL;
 static int n_dict_entries = 0;
@@ -1094,7 +1110,7 @@ static int parse_dict(const char *filename)
 		dict = realloc(dict, ++n_dict_entries *
 			       sizeof(struct dict_entry));
 		if (!dict) {
-			freeline(line);
+			free(line);
 			ret = -1;
 			goto out_free;
 		}
@@ -1103,7 +1119,7 @@ static int parse_dict(const char *filename)
 		dict[n_dict_entries - 1].element_str = element_str;
 
 	cont:
-		freeline(line);
+		free(line);
 	};
 
 out_free:
@@ -1237,7 +1253,7 @@ static int parse_text_file(char *conf_buffer, struct structure *structure,
 		free(value_array);
 
 	cont:
-		freeline(line);
+		free(line);
 	};
 
 	regfree(&r);
