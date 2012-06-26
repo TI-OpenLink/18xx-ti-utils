@@ -710,11 +710,11 @@ static int write_element(FILE *file, struct element *element)
 {
 	size_t name_len = strlen(element->name);
 
-	WRITE_VAL(name_len, file);
+	WRITE_INT32(name_len, file);
 	fwrite(element->name, 1, name_len, file);
-	WRITE_VAL(element->type, file);
-	WRITE_VAL(element->array_size, file);
-	WRITE_VAL(element->position, file);
+	WRITE_INT32(element->type, file);
+	WRITE_INT32(element->array_size, file);
+	WRITE_INT32(element->position, file);
 
 	return 0;
 }
@@ -724,10 +724,10 @@ static int write_struct(FILE *file, struct structure *structure)
 	size_t name_len = strlen(structure->name);
 	int i, ret = 0;
 
-	WRITE_VAL(name_len, file);
+	WRITE_INT32(name_len, file);
 	fwrite(structure->name, 1, name_len, file);
-	WRITE_VAL(structure->n_elements, file);
-	WRITE_VAL(structure->size, file);
+	WRITE_INT32(structure->n_elements, file);
+	WRITE_INT32(structure->size, file);
 
 	for (i = 0; i < structure->n_elements; i++) {
 		ret = write_element(file, &structure->elements[i]);
@@ -751,10 +751,10 @@ static int generate_struct(const char *filename)
 		goto out;
 	}
 
-	WRITE_VAL(magic, file);
-	WRITE_VAL(version, file);
-	WRITE_VAL(struct_chksum, file);
-	WRITE_VAL(n_structs, file);
+	WRITE_INT32(magic, file);
+	WRITE_INT32(version, file);
+	WRITE_INT32(struct_chksum, file);
+	WRITE_INT32(n_structs, file);
 
 	for (i = 0; i < n_structs; i++) {
 		ret = write_struct(file, &structures[i]);
@@ -772,7 +772,7 @@ static int read_element(FILE *file, struct element *element)
 	size_t name_len;
 	int ret = 0;
 
-	READ_VAL(name_len, file);
+	READ_INT32(name_len, (size_t), file);
 
 	element->name = malloc(name_len + 1);
 	if (!element->name) {
@@ -785,9 +785,9 @@ static int read_element(FILE *file, struct element *element)
 	fread(element->name, 1, name_len, file);
 	element->name[name_len] = '\0';
 
-	READ_VAL(element->type, file);
-	READ_VAL(element->array_size, file);
-	READ_VAL(element->position, file);
+	READ_INT32(element->type, (int), file);
+	READ_INT32(element->array_size, (int), file);
+	READ_INT32(element->position, (size_t), file);
 
 out:
 	return ret;
@@ -798,7 +798,7 @@ static int read_struct(FILE *file, struct structure *structure)
 	size_t name_len;
 	int i, ret = 0;
 
-	READ_VAL(name_len, file);
+	READ_INT32(name_len, (size_t), file);
 
 	structure->name = malloc(name_len + 1);
 	if (!structure->name) {
@@ -811,8 +811,8 @@ static int read_struct(FILE *file, struct structure *structure)
 	fread(structure->name, 1, name_len, file);
 	structure->name[name_len] = '\0';
 
-	READ_VAL(structure->n_elements, file);
-	READ_VAL(structure->size, file);
+	READ_INT32(structure->n_elements, (int), file);
+	READ_INT32(structure->size, (size_t), file);
 
 	structure->elements = malloc(structure->n_elements *
 				     sizeof(struct element));
@@ -846,10 +846,10 @@ static int read_binary_struct(const char *filename)
 		goto out;
 	}
 
-	READ_VAL(magic, file);
-	READ_VAL(version, file);
-	READ_VAL(struct_chksum, file);
-	READ_VAL(n_structs, file);
+	READ_INT32(magic, (int), file);
+	READ_INT32(version, (int), file);
+	READ_INT32(struct_chksum, (int), file);
+	READ_INT32(n_structs, (int), file);
 
 	structures = malloc(n_structs * sizeof(struct structure));
 	if (!structures) {

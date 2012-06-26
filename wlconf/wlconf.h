@@ -103,12 +103,15 @@ struct type types[] = {
 #define DEFINE_PATTERN	"#define[\n\t\r ]+([A-Za-z_][A-Za-z0-9_]*)"	\
 	"[\n\t\r ]+(0x[0-9A-Fa-f]+)"
 
-#define WRITE_VAL(val, file) {				\
+#define WRITE_INT32(from, file) {			\
+		int32_t val = (int32_t) from;		\
 		fwrite(&val, 1, sizeof(val), file);	\
 	}
 
-#define READ_VAL(val, file) {				\
+#define READ_INT32(into, type, file) {			\
+		int32_t val;				\
 		fread(&val, 1, sizeof(val), file);	\
+		into = type val;			\
 	}
 
 #endif /* __WLCONF_H__ */
