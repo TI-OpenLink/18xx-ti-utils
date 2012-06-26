@@ -94,9 +94,9 @@ struct type types[] = {
 #define DICT_PATTERN		"^[\t ]*([A-Za-z_][A-Za-z0-9_]*)" \
 	"[\t ]+([A-Za-z_][A-Za-z0-9_.]*)"
 
-#define CC_COMMENT_PATTERN	"(([^/]|[^/][^/])*)//[^\n]*\n(.*)"
+#define CC_COMMENT_PATTERN	"(([^/]|[/][^/])*)//[^\n]*\n(.*)"
 
-#define C_COMMENT_PATTERN	"(([^/]|[^/][^*])*)/\\*(([^*]|[^*][^/])*)\\*/(.*)"
+#define C_COMMENT_PATTERN	"(([^/]|[/][^*])*)/\\*(([^*]|[*][^/])*)\\*/(.*)"
 
 
 /* we only match WL12XX and WL18XX magic */
