@@ -82,6 +82,27 @@ representations.  The dictionary file format is:
 Check the dictionary.txt file for an example and to see which values
 can be used in INI files.
 
+UPGRADING DATA STRUCTURES
+-------------------------
+In case the data structures change (conf.h changes in driver) the following need to be done:
+
+* Update conf.h accordingly. Increment Versions (WLCORE and/or WL18xx)
+
+* If there are changes in INI params, need to update dictionary.txt
+
+* Recreate struct.bin:
+
+  # ./wlconf -S conf.h -G struct.bin
+
+* Update text conf files to new structures and defaults:
+	example.conf
+	example.ini
+	default.conf
+
+* Recreate default configuration bin file (wl18xx-conf-default.bin)
+
+  # ./wlconf -D
+
 KNOWN ISSUES AND LIMITATIONS
 ----------------------------
 

@@ -290,6 +290,7 @@ static void print_usage(char *executable)
 	       "\t-o, --output-config\tlocation of the input binary configuration file\n"
 	       "\t-X, --ignore-checksum\tignore file checksum error detection\n"
 	       "\n\tCOMMANDS\n"
+	       "\t-D, --create-default\tcreate default configuration bin file (%s)\n"
 	       "\t-g, --get\t\tget the value of the specified element (element[.element...]) or\n"
 	       "\t\t\t\tprint the entire tree if no element is specified\n"
 	       "\t-s, --set\t\tset the value of the specified element (element[.element...])\n"
@@ -301,7 +302,8 @@ static void print_usage(char *executable)
 	       "\t-p, --print-struct\tprint out the structure\n"
 	       "\t-h, --help\t\tprint this help\n"
 	       "\n",
-	       executable);
+	       executable,
+	       DEFAULT_INPUT_FILENAME);
 }
 
 static void free_structs(void)
@@ -1269,7 +1271,57 @@ out:
 	return ret;
 }
 
-#define SHORT_OPTIONS "S:s:b:i:o:g::G:C:I:phX"
+static int create_default(const char *conf_filename,
+			  const char *output_filename,
+			  void **conf_buf, struct structure *structure)
+{
+	int ret;
+
+	*conf_buf = malloc(structure->size);
+	if (!*conf_buf) {
+		fprintf(stderr, "Couldn't allocate enough memory (%d)\n",
+			structure->size);
+		ret = -1;
+		goto out;
+	}
+
+	/* set the magic for writing */
+	ret = set_value_int(*conf_buf, structure,
+			    magic,
+			    DEFAULT_MAGIC_ELEMENT);
+	if (ret < 0)
+		goto out;
+
+	/* set the version for writing */
+	ret = set_value_int(*conf_buf, structure,
+			    version,
+			    DEFAULT_VERSION_ELEMENT);
+	if (ret < 0)
+		goto out;
+
+	ret = parse_text_file(*conf_buf, structure,
+			      conf_filename, TEXT_FILE_CONF);
+	if (ret < 0)
+		goto out;
+
+	/* set the checksum for writing */
+	ret = set_value_int(*conf_buf, structure,
+			    calc_crc32(*conf_buf, structure->size),
+			    DEFAULT_CHKSUM_ELEMENT);
+	if (ret < 0)
+		goto out;
+
+	ret = write_file(output_filename, *conf_buf, structure->size);
+	if (ret < 0)
+		goto out;
+
+out:
+	if (ret < 0 && *conf_buf) free(*conf_buf);
+
+	return ret;
+}
+
+#define SHORT_OPTIONS "S:s:b:i:o:g::G:C:I:phXD"
 
 struct option long_options[] = {
 	{ "binary-struct",	required_argument,	NULL,	'b' },
@@ -1277,6 +1329,7 @@ struct option long_options[] = {
 	{ "input-config",	required_argument,	NULL,	'i' },
 	{ "output-config",	required_argument,	NULL,	'o' },
 	{ "ignore-checksum",	no_argument,		NULL,	'X' },
+	{ "create-default",	no_argument,		NULL,	'D' },
 	{ "get",		optional_argument,	NULL,	'g' },
 	{ "set",		required_argument,	NULL,	's' },
 	{ "generate-struct",	required_argument,	NULL,	'G' },
@@ -1328,6 +1381,16 @@ int main(int argc, char **argv)
 			ignore_checksum = 1;
 			break;
 
+		case 'D':
+			/* Build default configuration bin file (default input) */
+			if (output_filename) {
+				fprintf(stderr,	"Cannot specify output file name with -D\n");
+				print_usage(argv[0]);
+				exit(-1);
+			}
+			else
+				output_filename = strdup(DEFAULT_INPUT_FILENAME);
+			/* Fall through */
 		case 'G':
 		case 'g':
 		case 's':
@@ -1399,6 +1462,15 @@ int main(int argc, char **argv)
 	}
 
 	switch (command) {
+	case 'D':
+		/* Generate default configuration bin file */
+		ret = create_default(DEFAULT_CONF_FILENAME, output_filename,
+			&conf_buf, root_struct);
+
+		if (ret < 0)
+			goto out;
+
+		break;
 	case 'G':
 		if (!header_buf) {
 			fprintf(stderr, "Source struct file must be specified.\n");
