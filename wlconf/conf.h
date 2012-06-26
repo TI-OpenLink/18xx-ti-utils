@@ -951,6 +951,12 @@ struct conf_conn_settings {
 	 * Range: u16
 	 */
 	u8 max_listen_interval;
+
+	/*
+	 * Default sleep authorization for a new STA interface. This determines
+	 * whether we can go to ELP.
+	 */
+	u8 sta_sleep_auth;
 } __packed;
 
 enum {
@@ -1276,7 +1282,7 @@ struct conf_hangover_settings {
  * version, the two LSB are the lower driver's private conf
  * version.
  */
-#define WLCORE_CONF_VERSION	(0x0001 << 16)
+#define WLCORE_CONF_VERSION	(0x0002 << 16)
 #define WLCORE_CONF_MASK	0xffff0000
 #define WLCORE_CONF_SIZE	(sizeof(struct wlcore_conf_header) +	\
 				 sizeof(struct wlcore_conf))
@@ -1307,7 +1313,7 @@ struct wlcore_conf {
 };
 
 #define WL18XX_CONF_MAGIC	0x10e100ca
-#define WL18XX_CONF_VERSION	0x00010002
+#define WL18XX_CONF_VERSION	0x00020002
 #define WL18XX_CONF_MASK	0x0000ffff
 #define WL18XX_CONF_SIZE	(WLCORE_CONF_SIZE + \
 				 sizeof(struct wl18xx_priv_conf))
