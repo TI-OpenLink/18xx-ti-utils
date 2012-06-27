@@ -1060,19 +1060,11 @@ struct conf_scan_settings {
 	 */
 	u32 max_dwell_time_active;
 
-	/*
-	 * The minimum time to wait on each channel for passive scans
-	 *
-	 * Range: u32 tu/1000
-	 */
-	u32 min_dwell_time_passive;
+	/* time to wait on the channel for passive scans (in TU/1000) */
+	u32 dwell_time_passive;
 
-	/*
-	 * The maximum time to wait on each channel for passive scans
-	 *
-	 * Range: u32 tu/1000
-	 */
-	u32 max_dwell_time_passive;
+	/* time to wait on the channel for DFS scans (in TU/1000) */
+	u32 dwell_time_dfs;
 
 	/*
 	 * Number of probe requests to transmit on each active scan channel
@@ -1313,7 +1305,7 @@ struct wlcore_conf {
 };
 
 #define WL18XX_CONF_MAGIC	0x10e100ca
-#define WL18XX_CONF_VERSION	0x00020002
+#define WL18XX_CONF_VERSION	0x00020003
 #define WL18XX_CONF_MASK	0x0000ffff
 #define WL18XX_CONF_SIZE	(WLCORE_CONF_SIZE + \
 				 sizeof(struct wl18xx_priv_conf))
