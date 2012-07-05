@@ -1380,7 +1380,6 @@ enum wl18xx_ht_mode {
 struct wl18xx_ht_settings {
 	/* DEFAULT / WIDE / SISO20 */
 	u8 mode;
-	u8 padding[3];
 } __packed;
 
 struct wl18xx_priv_conf {
