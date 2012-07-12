@@ -95,7 +95,9 @@ uint32_t calc_crc32(const char *buffer, size_t size)
 	uint32_t crc = CRC32_SEED;
 
 	while (size--) {
-		crc ^= *buffer++;
+		/* We treat char as unsigned for crc calc */
+		crc ^= (uint8_t) *buffer++;
+
 		crc = (crc >> 4) ^ table[crc & 15];
 		crc = (crc >> 4) ^ table[crc & 15];
 	}

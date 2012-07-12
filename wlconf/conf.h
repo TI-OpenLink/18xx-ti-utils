@@ -612,7 +612,11 @@ struct conf_tx_settings {
 	 * Configuration for access categories for TX rate control.
 	 */
 	u8 ac_conf_count;
-	struct conf_tx_ac_category ac_conf[4];
+	/* struct conf_tx_ac_category ac_conf[4]; */
+	struct conf_tx_ac_category ac_conf0;
+	struct conf_tx_ac_category ac_conf1;
+	struct conf_tx_ac_category ac_conf2;
+	struct conf_tx_ac_category ac_conf3;
 
 	/*
 	 * AP-mode - allow this number of TX retries to a station before an
@@ -632,7 +636,15 @@ struct conf_tx_settings {
 	 * Configuration for TID parameters.
 	 */
 	u8 tid_conf_count;
-	struct conf_tx_tid tid_conf[8];
+	/* struct conf_tx_tid tid_conf[8]; */
+	struct conf_tx_tid tid_conf0;
+	struct conf_tx_tid tid_conf1;
+	struct conf_tx_tid tid_conf2;
+	struct conf_tx_tid tid_conf3;
+	struct conf_tx_tid tid_conf4;
+	struct conf_tx_tid tid_conf5;
+	struct conf_tx_tid tid_conf6;
+	struct conf_tx_tid tid_conf7;
 
 	/*
 	 * The TX fragmentation threshold.
@@ -676,8 +688,8 @@ struct conf_tx_settings {
 	u8 tmpl_short_retry_limit;
 	u8 tmpl_long_retry_limit;
 
-	/* Time in ms for Tx watchdog timer to expire */
-	u32 tx_watchdog_timeout;
+	/* Time in ms for "Tx stuck" timer to expire */
+	u32 tx_stuck_timeout;
 } __packed;
 
 enum {
@@ -830,7 +842,39 @@ struct conf_conn_settings {
 	 * Configure Beacon filter pass-thru rules.
 	 */
 	u8 bcn_filt_ie_count;
-	struct conf_bcn_filt_rule bcn_filt_ie[32];
+	/* struct conf_bcn_filt_rule bcn_filt_ie[32]; */
+	struct conf_bcn_filt_rule bcn_filt_ie0;
+	struct conf_bcn_filt_rule bcn_filt_ie1;
+	struct conf_bcn_filt_rule bcn_filt_ie2;
+	struct conf_bcn_filt_rule bcn_filt_ie3;
+	struct conf_bcn_filt_rule bcn_filt_ie4;
+	struct conf_bcn_filt_rule bcn_filt_ie5;
+	struct conf_bcn_filt_rule bcn_filt_ie6;
+	struct conf_bcn_filt_rule bcn_filt_ie7;
+	struct conf_bcn_filt_rule bcn_filt_ie8;
+	struct conf_bcn_filt_rule bcn_filt_ie9;
+	struct conf_bcn_filt_rule bcn_filt_ie10;
+	struct conf_bcn_filt_rule bcn_filt_ie11;
+	struct conf_bcn_filt_rule bcn_filt_ie12;
+	struct conf_bcn_filt_rule bcn_filt_ie13;
+	struct conf_bcn_filt_rule bcn_filt_ie14;
+	struct conf_bcn_filt_rule bcn_filt_ie15;
+	struct conf_bcn_filt_rule bcn_filt_ie16;
+	struct conf_bcn_filt_rule bcn_filt_ie17;
+	struct conf_bcn_filt_rule bcn_filt_ie18;
+	struct conf_bcn_filt_rule bcn_filt_ie19;
+	struct conf_bcn_filt_rule bcn_filt_ie20;
+	struct conf_bcn_filt_rule bcn_filt_ie21;
+	struct conf_bcn_filt_rule bcn_filt_ie22;
+	struct conf_bcn_filt_rule bcn_filt_ie23;
+	struct conf_bcn_filt_rule bcn_filt_ie24;
+	struct conf_bcn_filt_rule bcn_filt_ie25;
+	struct conf_bcn_filt_rule bcn_filt_ie26;
+	struct conf_bcn_filt_rule bcn_filt_ie27;
+	struct conf_bcn_filt_rule bcn_filt_ie28;
+	struct conf_bcn_filt_rule bcn_filt_ie29;
+	struct conf_bcn_filt_rule bcn_filt_ie30;
+	struct conf_bcn_filt_rule bcn_filt_ie31;
 
 	/*
 	 * The number of consecutive beacons to lose, before the firmware
@@ -1101,7 +1145,8 @@ struct conf_sched_scan_settings {
 	 */
 	u32 base_dwell_time;
 
-	/* The delta between the min dwell time and max dwell time for
+	/*
+	 * The delta between the min dwell time and max dwell time for
 	 * active scans (in TU/1000s). The max dwell time is used by the FW once
 	 * traffic is detected on the channel.
 	 */
@@ -1282,7 +1327,7 @@ struct conf_hangover_settings {
  * version, the two LSB are the lower driver's private conf
  * version.
  */
-#define WLCORE_CONF_VERSION	(0x0002 << 16)
+#define WLCORE_CONF_VERSION	(0x0001 << 16)
 #define WLCORE_CONF_MASK	0xffff0000
 #define WLCORE_CONF_SIZE	(sizeof(struct wlcore_conf_header) +	\
 				 sizeof(struct wlcore_conf))
@@ -1313,7 +1358,7 @@ struct wlcore_conf {
 };
 
 #define WL18XX_CONF_MAGIC	0x10e100ca
-#define WL18XX_CONF_VERSION	0x00020002
+#define WL18XX_CONF_VERSION	0x00010003
 #define WL18XX_CONF_MASK	0x0000ffff
 #define WL18XX_CONF_SIZE	(WLCORE_CONF_SIZE + \
 				 sizeof(struct wl18xx_priv_conf))
@@ -1366,7 +1411,7 @@ struct wl18xx_mac_and_phy_params {
 	u8 secondary_clock_setting_time;
 	u8 board_type;
 	/* enable point saturation */
-	u8 psat;
+	u8 Psat;
 	/* low/medium/high Tx power in dBm */
 	s8 low_power_val;
 	s8 med_power_val;
@@ -1374,7 +1419,26 @@ struct wl18xx_mac_and_phy_params {
 	u8 padding[1];
 } __packed;
 
+enum wl18xx_ht_mode {
+	/* Use MIMO */
+	HT_MODE_MIMO = 0,
+
+	/* Wide - use SISO40 */
+	HT_MODE_WIDE = 1,
+
+	/* Use SISO20 */
+	HT_MODE_SISO20 = 2,
+};
+
+struct wl18xx_ht_settings {
+	/* MIMO / WIDE / SISO20 */
+	u8 mode;
+} __packed;
+
 struct wl18xx_priv_conf {
+	/* Module params structures */
+	struct wl18xx_ht_settings ht;
+
 	/* this structure is copied wholesale to FW */
 	struct wl18xx_mac_and_phy_params phy;
 } __packed;

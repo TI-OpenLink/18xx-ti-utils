@@ -34,7 +34,7 @@ SRF1				wl18xx.phy.srf1
 SRF2				wl18xx.phy.srf2
 SRF3				wl18xx.phy.srf3
 PerChanPwrLimitArr11ABG		wl18xx.phy.per_chan_pwr_limit_arr_11abg
-PsatMode			wl18xx.phy.psat
+PsatMode			wl18xx.phy.Psat
 TxPower_level_MaxPower		wl18xx.phy.high_power_val
 TxPower_level_MedPower		wl18xx.phy.med_power_val
 TxPower_level_LowPower		wl18xx.phy.low_power_val
