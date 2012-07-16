@@ -612,7 +612,11 @@ struct conf_tx_settings {
 	 * Configuration for access categories for TX rate control.
 	 */
 	u8 ac_conf_count;
-	struct conf_tx_ac_category ac_conf[4];
+	/* struct conf_tx_ac_category ac_conf[4]; */
+	struct conf_tx_ac_category ac_conf0;
+	struct conf_tx_ac_category ac_conf1;
+	struct conf_tx_ac_category ac_conf2;
+	struct conf_tx_ac_category ac_conf3;
 
 	/*
 	 * AP-mode - allow this number of TX retries to a station before an
@@ -632,7 +636,15 @@ struct conf_tx_settings {
 	 * Configuration for TID parameters.
 	 */
 	u8 tid_conf_count;
-	struct conf_tx_tid tid_conf[8];
+	/* struct conf_tx_tid tid_conf[8]; */
+	struct conf_tx_tid tid_conf0;
+	struct conf_tx_tid tid_conf1;
+	struct conf_tx_tid tid_conf2;
+	struct conf_tx_tid tid_conf3;
+	struct conf_tx_tid tid_conf4;
+	struct conf_tx_tid tid_conf5;
+	struct conf_tx_tid tid_conf6;
+	struct conf_tx_tid tid_conf7;
 
 	/*
 	 * The TX fragmentation threshold.
@@ -830,7 +842,39 @@ struct conf_conn_settings {
 	 * Configure Beacon filter pass-thru rules.
 	 */
 	u8 bcn_filt_ie_count;
-	struct conf_bcn_filt_rule bcn_filt_ie[32];
+	/* struct conf_bcn_filt_rule bcn_filt_ie[32]; */
+	struct conf_bcn_filt_rule bcn_filt_ie0;
+	struct conf_bcn_filt_rule bcn_filt_ie1;
+	struct conf_bcn_filt_rule bcn_filt_ie2;
+	struct conf_bcn_filt_rule bcn_filt_ie3;
+	struct conf_bcn_filt_rule bcn_filt_ie4;
+	struct conf_bcn_filt_rule bcn_filt_ie5;
+	struct conf_bcn_filt_rule bcn_filt_ie6;
+	struct conf_bcn_filt_rule bcn_filt_ie7;
+	struct conf_bcn_filt_rule bcn_filt_ie8;
+	struct conf_bcn_filt_rule bcn_filt_ie9;
+	struct conf_bcn_filt_rule bcn_filt_ie10;
+	struct conf_bcn_filt_rule bcn_filt_ie11;
+	struct conf_bcn_filt_rule bcn_filt_ie12;
+	struct conf_bcn_filt_rule bcn_filt_ie13;
+	struct conf_bcn_filt_rule bcn_filt_ie14;
+	struct conf_bcn_filt_rule bcn_filt_ie15;
+	struct conf_bcn_filt_rule bcn_filt_ie16;
+	struct conf_bcn_filt_rule bcn_filt_ie17;
+	struct conf_bcn_filt_rule bcn_filt_ie18;
+	struct conf_bcn_filt_rule bcn_filt_ie19;
+	struct conf_bcn_filt_rule bcn_filt_ie20;
+	struct conf_bcn_filt_rule bcn_filt_ie21;
+	struct conf_bcn_filt_rule bcn_filt_ie22;
+	struct conf_bcn_filt_rule bcn_filt_ie23;
+	struct conf_bcn_filt_rule bcn_filt_ie24;
+	struct conf_bcn_filt_rule bcn_filt_ie25;
+	struct conf_bcn_filt_rule bcn_filt_ie26;
+	struct conf_bcn_filt_rule bcn_filt_ie27;
+	struct conf_bcn_filt_rule bcn_filt_ie28;
+	struct conf_bcn_filt_rule bcn_filt_ie29;
+	struct conf_bcn_filt_rule bcn_filt_ie30;
+	struct conf_bcn_filt_rule bcn_filt_ie31;
 
 	/*
 	 * The number of consecutive beacons to lose, before the firmware
