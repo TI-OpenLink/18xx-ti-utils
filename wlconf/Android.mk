@@ -6,6 +6,7 @@ LOCAL_SRC_FILES := \
 	crc32.c
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)
+LOCAL_CFLAGS += -DWLCONF_DIR=\"/system/etc/wifi/wlconf/\"
 LOCAL_MODULE_TAGS := debug
 LOCAL_MODULE := wlconf
 include $(BUILD_EXECUTABLE)

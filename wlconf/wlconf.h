@@ -62,11 +62,20 @@ struct type types[] = {
 	{ "__le16", 2, "%d" },
 };
 
-#define DEFAULT_INPUT_FILENAME	"wl18xx-conf-default.bin"
-#define DEFAULT_OUTPUT_FILENAME	"wl18xx-conf.bin"
-#define DEFAULT_BIN_FILENAME	"struct.bin"
-#define DEFAULT_DICT_FILENAME	"dictionary.txt"
-#define DEFAULT_CONF_FILENAME	"default.conf"
+/*
+ * WLCONF_DIR can contains the default directory for wlconf metafiles
+ * It is used in case of Android build so wlconf can run anywhere
+ * See in Android.mk
+ */
+#ifndef WLCONF_DIR
+#define WLCONF_DIR ""
+#endif
+
+#define DEFAULT_INPUT_FILENAME	WLCONF_DIR "wl18xx-conf-default.bin"
+#define DEFAULT_OUTPUT_FILENAME		   "wl18xx-conf.bin"
+#define DEFAULT_BIN_FILENAME	WLCONF_DIR "struct.bin"
+#define DEFAULT_DICT_FILENAME	WLCONF_DIR "dictionary.txt"
+#define DEFAULT_CONF_FILENAME	WLCONF_DIR "default.conf"
 #define DEFAULT_ROOT_STRUCT	"wlcore_conf_file"
 #define DEFAULT_MAGIC_SYMBOL	"WL18XX_CONF_MAGIC"
 #define DEFAULT_VERSION_SYMBOL	"WL18XX_CONF_VERSION"
