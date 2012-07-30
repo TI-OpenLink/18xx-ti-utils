@@ -37,9 +37,86 @@ struct conf_tx_ac_category {
 	u8 aifsn[1]
 	u16 tx_op_limit[1]
 } /* conf_tx_ac_category */
+struct conf_tx_ac_category {
+	u8 ac[1]
+	u8 cw_min[1]
+	u16 cw_max[1]
+	u8 aifsn[1]
+	u16 tx_op_limit[1]
+} /* conf_tx_ac_category */
+struct conf_tx_ac_category {
+	u8 ac[1]
+	u8 cw_min[1]
+	u16 cw_max[1]
+	u8 aifsn[1]
+	u16 tx_op_limit[1]
+} /* conf_tx_ac_category */
+struct conf_tx_ac_category {
+	u8 ac[1]
+	u8 cw_min[1]
+	u16 cw_max[1]
+	u8 aifsn[1]
+	u16 tx_op_limit[1]
+} /* conf_tx_ac_category */
 	u8 max_tx_retries[1]
 	u16 ap_aging_period[1]
 	u8 tid_conf_count[1]
+struct conf_tx_tid {
+	u8 queue_id[1]
+	u8 channel_type[1]
+	u8 tsid[1]
+	u8 ps_scheme[1]
+	u8 ack_policy[1]
+	u32 apsd_conf[2]
+} /* conf_tx_tid */
+struct conf_tx_tid {
+	u8 queue_id[1]
+	u8 channel_type[1]
+	u8 tsid[1]
+	u8 ps_scheme[1]
+	u8 ack_policy[1]
+	u32 apsd_conf[2]
+} /* conf_tx_tid */
+struct conf_tx_tid {
+	u8 queue_id[1]
+	u8 channel_type[1]
+	u8 tsid[1]
+	u8 ps_scheme[1]
+	u8 ack_policy[1]
+	u32 apsd_conf[2]
+} /* conf_tx_tid */
+struct conf_tx_tid {
+	u8 queue_id[1]
+	u8 channel_type[1]
+	u8 tsid[1]
+	u8 ps_scheme[1]
+	u8 ack_policy[1]
+	u32 apsd_conf[2]
+} /* conf_tx_tid */
+struct conf_tx_tid {
+	u8 queue_id[1]
+	u8 channel_type[1]
+	u8 tsid[1]
+	u8 ps_scheme[1]
+	u8 ack_policy[1]
+	u32 apsd_conf[2]
+} /* conf_tx_tid */
+struct conf_tx_tid {
+	u8 queue_id[1]
+	u8 channel_type[1]
+	u8 tsid[1]
+	u8 ps_scheme[1]
+	u8 ack_policy[1]
+	u32 apsd_conf[2]
+} /* conf_tx_tid */
+struct conf_tx_tid {
+	u8 queue_id[1]
+	u8 channel_type[1]
+	u8 tsid[1]
+	u8 ps_scheme[1]
+	u8 ack_policy[1]
+	u32 apsd_conf[2]
+} /* conf_tx_tid */
 struct conf_tx_tid {
 	u8 queue_id[1]
 	u8 channel_type[1]
@@ -55,7 +132,7 @@ struct conf_tx_tid {
 	u32 basic_rate_5[1]
 	u8 tmpl_short_retry_limit[1]
 	u8 tmpl_long_retry_limit[1]
-	u32 tx_watchdog_timeout[1]
+	u32 tx_stuck_timeout[1]
 } /* conf_tx_settings */
 struct conf_conn_settings {
 	u8 wake_up_event[1]
@@ -64,6 +141,223 @@ struct conf_conn_settings {
 	u8 suspend_listen_interval[1]
 	u8 bcn_filt_mode[1]
 	u8 bcn_filt_ie_count[1]
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
 struct conf_bcn_filt_rule {
 	u8 ie[1]
 	u8 rule[1]
@@ -92,6 +386,7 @@ struct conf_sig_weights {
 	u8 forced_ps[1]
 	u32 keep_alive_interval[1]
 	u8 max_listen_interval[1]
+	u8 sta_sleep_auth[1]
 } /* conf_conn_settings */
 struct conf_itrim_settings {
 	u8 enable[1]
@@ -201,6 +496,9 @@ struct conf_hangover_settings {
 } /* conf_hangover_settings */
 } /* wlcore_conf */
 struct wl18xx_priv_conf {
+struct wl18xx_ht_settings {
+	u8 mode[1]
+} /* wl18xx_ht_settings */
 struct wl18xx_mac_and_phy_params {
 	u8 phy_standalone[1]
 	u8 rdl[1]
@@ -236,7 +534,7 @@ struct wl18xx_mac_and_phy_params {
 	u8 clock_valid_on_wake_up[1]
 	u8 secondary_clock_setting_time[1]
 	u8 board_type[1]
-	u8 psat[1]
+	u8 Psat[1]
 	s8 low_power_val[1]
 	s8 med_power_val[1]
 	s8 high_power_val[1]
