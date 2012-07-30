@@ -1442,6 +1442,12 @@ int main(int argc, char **argv)
 			goto out;
 	}
 
+	if (binary_struct_filename) {
+		ret = read_binary_struct(binary_struct_filename);
+		if (ret < 0)
+			goto out;
+	}
+
 	if (header_filename) {
 		ret = read_file(header_filename, &header_buf, 0);
 		if (ret < 0)
