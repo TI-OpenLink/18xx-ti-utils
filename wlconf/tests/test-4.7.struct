@@ -494,6 +494,10 @@ struct conf_hangover_settings {
 	u8 increase_time[1]
 	u8 window_size[1]
 } /* conf_hangover_settings */
+struct conf_recovery_settings {
+	u8 bug_on_recovery[1]
+	u8 no_recovery[1]
+} /* conf_recovery_settings */
 } /* wlcore_conf */
 struct wl18xx_priv_conf {
 struct wl18xx_ht_settings {
