@@ -25,29 +25,30 @@
 
 SECTION(wl18xx_plt);
 
-static int  plt_wl18xx_set_antenna_mode(struct nl80211_state *state, struct nl_cb *cb,
+
+static int  plt_wl18xx_set_antenna_mode_5G(struct nl80211_state *state, struct nl_cb *cb,
 			      struct nl_msg *msg, int argc, char **argv)
 {
 	struct nlattr *key;
-	struct wl18xx_cmd_set_antenna_mode prms;
+	struct wl18xx_cmd_set_antenna_mode_5G prms;
 
-	if (argc != 3)
+	if (argc != 4)
 		return 1;
 
-	prms.test.id	= WL18XX_TEST_CMD_SET_ANTENNA_MODE;
+	prms.test.id	= WL18XX_TEST_CMD_SET_ANTENNA_MODE_5G;
 
-	prms.primary_rf_channel = atoi(argv[0]);
-	prms.rf_chain_1_enable = atoi(argv[1]);
-	prms.rf_chain_2_enable = atoi(argv[2]);
 
-	if (prms.primary_rf_channel != 1 && prms.primary_rf_channel != 2 )
+	prms.mac_prim_rx_chain = (__u8)atoi(argv[0]);
+	prms.mac_rx_chain1_en  = (__u8)atoi(argv[1]);
+	prms.mac_rx_chain2_en  = (__u8)atoi(argv[2]);
+	prms.mac_tx_chain1_en  = (__u8)atoi(argv[3]);
+
+	if ((prms.mac_prim_rx_chain != 1 && prms.mac_prim_rx_chain != 2 ))
 		return 1;
 
-	if (prms.rf_chain_1_enable > 1)
+	if ((prms.mac_rx_chain1_en > 1) || (prms.mac_rx_chain2_en > 1)
+			|| (prms.mac_tx_chain1_en > 1))
 		return 1;
-
-	if (prms.rf_chain_2_enable > 1)
-			return 1;
 
 	key = nla_nest_start(msg, NL80211_ATTR_TESTDATA);
 	if (!key) {
@@ -67,13 +68,61 @@ nla_put_failure:
 	return 2;
 }
 
+COMMAND(wl18xx_plt, set_antenna_mode_5G , "<mac_prim_rx_chain> <mac_rx_chain1_en> "
+		"<mac_rx_chain2_en> <mac_tx_chain1_en>",
+	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_set_antenna_mode_5G,
+	"set antenna mode 5G for PLT.\n");
 
-COMMAND(wl18xx_plt, set_antenna_mode , "<primary_rf_channel> <rf_chain_1_enable> "
-		"<rf_chain_2_enable>",
-	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_set_antenna_mode,
-	"set antenna modefor PLT.\n");
+
+static int  plt_wl18xx_set_antenna_mode_24G(struct nl80211_state *state, struct nl_cb *cb,
+			      struct nl_msg *msg, int argc, char **argv)
+{
+	struct nlattr *key;
+	struct wl18xx_cmd_set_antenna_mode_24G prms;
+
+	if (argc != 6)
+		return 1;
+
+	prms.test.id	= WL18XX_TEST_CMD_SET_ANTENNA_MODE_24G;
 
 
+	prms.mac_prim_rx_chain = (__u8)atoi(argv[0]);
+	prms.mac_prim_tx_chain = (__u8)atoi(argv[1]);
+	prms.mac_rx_chain1_en  = (__u8)atoi(argv[2]);
+	prms.mac_rx_chain2_en  = (__u8)atoi(argv[3]);
+	prms.mac_tx_chain1_en  = (__u8)atoi(argv[4]);
+	prms.mac_tx_chain2_en  = (__u8)atoi(argv[5]);
+
+	if ((prms.mac_prim_rx_chain != 1 && prms.mac_prim_rx_chain != 2 ) ||
+		(prms.mac_prim_tx_chain != 1 && prms.mac_prim_tx_chain != 2 ))
+		return 1;
+
+	if ((prms.mac_rx_chain1_en > 1) || (prms.mac_rx_chain2_en > 1) ||
+		(prms.mac_tx_chain1_en > 1) || (prms.mac_tx_chain2_en > 1))
+		return 1;
+
+	key = nla_nest_start(msg, NL80211_ATTR_TESTDATA);
+	if (!key) {
+		fprintf(stderr, "fail to nla_nest_start()\n");
+		return 1;
+	}
+
+	NLA_PUT_U32(msg, WL1271_TM_ATTR_CMD_ID, WL1271_TM_CMD_TEST);
+	NLA_PUT(msg, WL1271_TM_ATTR_DATA, sizeof(prms), &prms);
+
+	nla_nest_end(msg, key);
+
+	return 0;
+
+nla_put_failure:
+	fprintf(stderr, "%s> building message failed\n", __func__);
+	return 2;
+}
+
+COMMAND(wl18xx_plt, set_antenna_mode_24G , "<mac_prim_rx_chain> <mac_prim_tx_chain> "
+		"<mac_rx_chain1_en> <mac_rx_chain2_en> <mac_tx_chain1_en> <mac_tx_chain2_en>",
+	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_set_antenna_mode_24G,
+	"set antenna mode 2.4G for PLT.\n");
 
 static int plt_wl18xx_set_tx_power(struct nl80211_state *state,
 		struct nl_cb *cb, struct nl_msg *msg, int argc, char **argv)
