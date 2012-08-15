@@ -426,17 +426,43 @@ antennas and RF in general is working properly.
 4. start transmit (see start TX)
    
    
----  Set antenna mosde in wl18xx
+---  Set antenna mode in wl18xx
 
 1. Boot the firmware in PLT mode:
 
    calibrator wlan0 plt power_mode on
 
-2. set the antenna :
+2. set the antenna for the 2.4GHz:
 
-   calibrator wlan0 wl18xx_plt set_antenna_mode <primary_rf_channel> 
-                                 <rf_chain_1_enable> <rf_chain_2_enable>
+   calibrator wlan0 wl18xx_plt set_antenna_mode_24G <mac_prim_rx_chain> <mac_prim_tx_chain> <mac_rx_chain1_en> <mac_rx_chain2_en> <mac_tx_chain1_en> <mac_tx_chain2_en>
 
+3. set the antenna for the 5GHz:
+
+   calibrator wlan0 wl18xx_plt set_antenna_mode_5G <mac_prim_rx_chain> <mac_rx_chain1_en> <mac_rx_chain2_en> <mac_tx_chain1_en>
+
+---  Read  PHY register in wl18xx
+
+1. Boot the firmware in PLT mode:
+
+   calibrator wlan0 plt power_mode on
+
+2. Read register address:
+
+   calibrator wlan0 wl18xx_plt wl18xx_plt phy_reg_read <addr>
+
+   Note: the address is expected in hexadecimal representation.
+
+---  Write PHY register in wl18xx
+
+1. Boot the firmware in PLT mode:
+
+   calibrator wlan0 plt power_mode on
+
+2. Write register address:
+
+   calibrator wlan0 wl18xx_plt wl18xx_plt phy_reg_write <addr> <data>
+
+   Note: the address and data are expected in hexadecimal representation.
 
 
 -------------------------------------------------------------------------------
