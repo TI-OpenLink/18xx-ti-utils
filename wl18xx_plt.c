@@ -26,6 +26,110 @@
 SECTION(wl18xx_plt);
 
 
+static int  plt_wl18xx_phy_reg_write(struct nl80211_state *state, struct nl_cb *cb,
+			      struct nl_msg *msg, int argc, char **argv)
+{
+	struct nlattr *key;
+	struct wl18xx_cmd_phy_reg_write prms;
+
+	if (argc != 2)
+		return 1;
+
+	prms.test.id	= WL18XX_TEST_CMD_PHY_ADDR_WRITE;
+
+
+	prms.addr 	= strtol(argv[0], NULL, 16);
+	prms.data	= strtol(argv[1], NULL, 16);
+
+	key = nla_nest_start(msg, NL80211_ATTR_TESTDATA);
+	if (!key) {
+		fprintf(stderr, "fail to nla_nest_start()\n");
+		return 1;
+	}
+
+	NLA_PUT_U32(msg, WL1271_TM_ATTR_CMD_ID, WL1271_TM_CMD_TEST);
+	NLA_PUT(msg, WL1271_TM_ATTR_DATA, sizeof(prms), &prms);
+
+	nla_nest_end(msg, key);
+
+	return 0;
+
+nla_put_failure:
+	fprintf(stderr, "%s> building message failed\n", __func__);
+	return 2;
+}
+
+COMMAND(wl18xx_plt, phy_reg_write , "<addr> <data> ",
+	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_phy_reg_write,
+	" Write PHY register for PLT.\n");
+
+static int plt_wl18xx_display_phy_reg_read(struct nl_msg *msg, void *arg)
+{
+	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+	struct nlattr *td[WL1271_TM_ATTR_MAX + 1];
+	struct wl18xx_cmd_phy_reg_read *prms;
+
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
+		genlmsg_attrlen(gnlh, 0), NULL);
+
+	if (!tb[NL80211_ATTR_TESTDATA]) {
+		fprintf(stderr, "no data!\n");
+		return NL_SKIP;
+	}
+
+	nla_parse(td, WL1271_TM_ATTR_MAX, nla_data(tb[NL80211_ATTR_TESTDATA]),
+		  nla_len(tb[NL80211_ATTR_TESTDATA]), NULL);
+
+	prms = (struct wl18xx_cmd_phy_reg_read *) nla_data(td[WL1271_TM_ATTR_DATA]);
+
+	printf("Register Address: \t0x%x\t", prms->addr);
+	printf("is:\t0x%x\n", prms->data);
+
+	return NL_SKIP;
+}
+
+
+static int  plt_wl18xx_phy_reg_read(struct nl80211_state *state, struct nl_cb *cb,
+			      struct nl_msg *msg, int argc, char **argv)
+{
+	struct nlattr *key;
+	struct wl18xx_cmd_phy_reg_read prms;
+
+	if (argc != 1)
+		return 1;
+
+	prms.test.id	= WL18XX_TEST_CMD_PHY_ADDR_READ;
+
+	prms.addr 	= strtol(argv[0], NULL, 16);
+
+	key = nla_nest_start(msg, NL80211_ATTR_TESTDATA);
+	if (!key) {
+		fprintf(stderr, "fail to nla_nest_start()\n");
+		return 1;
+	}
+
+	NLA_PUT_U32(msg, WL1271_TM_ATTR_CMD_ID, WL1271_TM_CMD_TEST);
+	NLA_PUT(msg, WL1271_TM_ATTR_DATA, sizeof(prms), &prms);
+	NLA_PUT_U8(msg, WL1271_TM_ATTR_ANSWER, 1);
+
+	nla_nest_end(msg, key);
+
+	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM,
+			plt_wl18xx_display_phy_reg_read, NULL);
+
+	return 0;
+
+nla_put_failure:
+	fprintf(stderr, "%s> building message failed\n", __func__);
+	return 2;
+}
+
+COMMAND(wl18xx_plt, phy_reg_read , "<addr>",
+	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_phy_reg_read,
+	" Read PHY register for PLT.\n");
+
+
 static int  plt_wl18xx_set_antenna_mode_5G(struct nl80211_state *state, struct nl_cb *cb,
 			      struct nl_msg *msg, int argc, char **argv)
 {
@@ -195,8 +299,6 @@ nla_put_failure:
 	fprintf(stderr, "%s> building message failed\n", __func__);
 	return 2;
 }
-
-
 
 COMMAND(wl18xx_plt, set_tx_power, "<output_power> <level> <band> "
 		"<primary_channel> <2nd_channel> <antenna> <non_serving_channel> "

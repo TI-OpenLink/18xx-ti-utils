@@ -71,6 +71,8 @@ enum wl18xx_test_cmds {
 	/*  0x2d    */	WL18XX_TEST_CMD_SET_ANTENNA_MODE_24G,
 	/*  0x2e    */  WL18XX_TEST_CMD_GET_CALIB_RESULT,
 	/*  0x2f    */  WL18XX_TEST_CMD_SET_ANTENNA_MODE_5G,
+	/*  0x30    */  WL18XX_TEST_CMD_PHY_ADDR_READ,
+	/*  0x31    */  WL18XX_TEST_CMD_PHY_ADDR_WRITE,
 };
 
 struct wl18xx_cmd_channel_tune {
@@ -177,6 +179,26 @@ struct wl18xx_cmd_set_antenna_mode_5G { /* TEST_CMD_SET_ANTENNA_MODE5G */
 	__u8   mac_rx_chain1_en;
 	__u8   mac_rx_chain2_en;
 	__u8   mac_tx_chain1_en;
+} __attribute__((packed));
+
+struct wl18xx_cmd_phy_reg_read { /* TEST_CMD_PHY_REG_READ */
+	struct wl1271_cmd_header header;
+	struct wl1271_cmd_test_header test;
+
+	__le32 radio_status;
+
+	__le32 data;
+	__le32 addr;
+} __attribute__((packed));
+
+struct wl18xx_cmd_phy_reg_write { /* TEST_CMD_PHY_REG_WRITE */
+	struct wl1271_cmd_header header;
+	struct wl1271_cmd_test_header test;
+
+	__le32 radio_status;
+
+	__le32 data;
+	__le32 addr;
 } __attribute__((packed));
 
 #endif /* __WL18XX_PLT_H__ */
