@@ -1,6 +1,8 @@
 #ifndef __PLT_H
 #define __PLT_H
 
+#include <linux/ethtool.h>
+
 #ifdef ANDROID
 #define CURRENT_NVS_NAME	"/system/etc/firmware/ti-connectivity/wl12xx-nvs.bin"
 #define INSMOD_PATH		"/system/bin/insmod"
@@ -329,6 +331,10 @@ struct wl1271_radio_rx_statcs {
 	unsigned char padding[2];
 } __attribute__((packed));
 
+struct fw_version {
+	int ver[5];
+} __attribute__((packed));
+
 enum wl1271_nvs_type {
 	eNVS_VERSION = 0xaa,
 	eNVS_RADIO_TX_PARAMETERS = 1,
@@ -391,7 +397,9 @@ enum EFUSE_PARAMETER_TYPE_ENMT {
 int get_mac_addr(int ifc_num, unsigned char *mac_addr);
 
 int file_exist(const char *filename);
+int do_get_drv_info(char *dev_name, int *hw_ver,
+		    struct ethtool_drvinfo *out_drvinfo);
+int is_fw_ver_valid(char *dev_name, struct fw_version *fw_ver_valid);
 
-int do_get_drv_info(char *dev_name, int *arch);
 
 #endif /* __PLT_H */

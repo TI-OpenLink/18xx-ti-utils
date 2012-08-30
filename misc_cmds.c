@@ -292,7 +292,7 @@ static int get_drv_info(struct nl80211_state *state, struct nl_cb *cb,
 		return 2;
 	}
 
-	return do_get_drv_info(argv[0], NULL);
+	return do_get_drv_info(argv[0], NULL, NULL);
 }
 
 COMMAND(get, drv_info, "<device name>", 0, 0, CIB_NONE, get_drv_info,
@@ -311,7 +311,7 @@ static int get_hw_version(struct nl80211_state *state, struct nl_cb *cb,
 		return 2;
 	}
 
-	ret = do_get_drv_info(argv[0], &chip_id);
+	ret = do_get_drv_info(argv[0], &chip_id, NULL);
 	if (!ret)
 		printf("%08X\n", chip_id);
 

@@ -31,6 +31,17 @@ static int  plt_wl18xx_phy_reg_write(struct nl80211_state *state, struct nl_cb *
 {
 	struct nlattr *key;
 	struct wl18xx_cmd_phy_reg_write prms;
+	struct fw_version fw_ver_valid={{8,4,0,0,2}};
+
+	/* Validate the FW supported version (given 3 args before) */
+	if (is_fw_ver_valid(*(argv-3), &fw_ver_valid)) {
+		printf("\tFail: the FW version does not support this command\n");
+		printf("\tThe FW supported verstion starting from %d.%d.%d.%d.%d\n",
+				fw_ver_valid.ver[0], fw_ver_valid.ver[1],
+				fw_ver_valid.ver[2], fw_ver_valid.ver[3],
+				fw_ver_valid.ver[4]);
+		return 1;
+	}
 
 	if (argc != 2)
 		return 1;
@@ -95,6 +106,17 @@ static int  plt_wl18xx_phy_reg_read(struct nl80211_state *state, struct nl_cb *c
 {
 	struct nlattr *key;
 	struct wl18xx_cmd_phy_reg_read prms;
+	struct fw_version fw_ver_valid={{8,4,0,0,2}};
+
+	/* Validate the FW supported version (given 3 args before) */
+	if (is_fw_ver_valid(*(argv-3), &fw_ver_valid)) {
+		printf("\tFail: the FW version does not support this command\n");
+		printf("\tThe FW supported verstion starting from %d.%d.%d.%d.%d\n",
+				fw_ver_valid.ver[0], fw_ver_valid.ver[1],
+				fw_ver_valid.ver[2], fw_ver_valid.ver[3],
+				fw_ver_valid.ver[4]);
+		return 1;
+	}
 
 	if (argc != 1)
 		return 1;
@@ -135,6 +157,18 @@ static int  plt_wl18xx_set_antenna_mode_5G(struct nl80211_state *state, struct n
 {
 	struct nlattr *key;
 	struct wl18xx_cmd_set_antenna_mode_5G prms;
+	struct fw_version fw_ver_valid={{8,4,0,0,2}};
+
+	/* Validate the FW supported version (given 3 args before) */
+	if (is_fw_ver_valid(*(argv-3), &fw_ver_valid)) {
+		printf("\tFail: the FW version does not support this command\n");
+		printf("\tThe FW supported verstion starting from %d.%d.%d.%d.%d\n",
+				fw_ver_valid.ver[0], fw_ver_valid.ver[1],
+				fw_ver_valid.ver[2], fw_ver_valid.ver[3],
+				fw_ver_valid.ver[4]);
+		return 1;
+	}
+
 
 	if (argc != 4)
 		return 1;
@@ -183,6 +217,17 @@ static int  plt_wl18xx_set_antenna_mode_24G(struct nl80211_state *state, struct 
 {
 	struct nlattr *key;
 	struct wl18xx_cmd_set_antenna_mode_24G prms;
+	struct fw_version fw_ver_valid={{8,4,0,0,2}};
+
+	/* Validate the FW supported version (given 3 args before) */
+	if (is_fw_ver_valid(*(argv-3), &fw_ver_valid)) {
+		printf("\tFail: the FW version does not support this command\n");
+		printf("\tThe FW supported verstion starting from %d.%d.%d.%d.%d\n",
+				fw_ver_valid.ver[0], fw_ver_valid.ver[1],
+				fw_ver_valid.ver[2], fw_ver_valid.ver[3],
+				fw_ver_valid.ver[4]);
+		return 1;
+	}
 
 	if (argc != 6)
 		return 1;

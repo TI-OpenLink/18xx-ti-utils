@@ -266,7 +266,9 @@ static void dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
 		info->fw_version, info->bus_info, regs->version);
 }
 
-int do_get_drv_info(char *dev_name, int *hw_ver)
+
+int do_get_drv_info(char *dev_name, int *hw_ver,
+		    struct ethtool_drvinfo *out_drvinfo)
 {
 	struct ifreq ifr;
 	int fd, err;
@@ -307,7 +309,9 @@ int do_get_drv_info(char *dev_name, int *hw_ver)
 
 	if (hw_ver)
 		*hw_ver = regs->version;
-	else
+	if (out_drvinfo)
+		*out_drvinfo=drvinfo;
+	if (!hw_ver && !out_drvinfo)
 		dump_regs(&drvinfo, regs);
 	free(regs);
 
@@ -322,11 +326,50 @@ error_out:
 	return 1;
 }
 
+int is_fw_ver_valid(char *dev_name, struct fw_version *fw_ver_valid)
+{
+	char *str, *tmp_str;
+	struct ethtool_drvinfo drvinfo;
+	char sep = '.';
+	int i=0, ret=0;
+	struct fw_version fw_ver_crnt;
+
+	ret = do_get_drv_info(dev_name, NULL, &drvinfo);
+	if(ret)	{
+		printf("\tFailed to get FW version.\n");
+		goto error;
+	}
+
+	str=drvinfo.fw_version;
+
+	/* Looking for the last space in the version.*/
+	/* Usually version starting with text and value after spacing.*/
+	tmp_str = strrchr (str,' ');
+	while((tmp_str != NULL) &&
+	      (i < (int) (sizeof(fw_ver_valid->ver)/sizeof(int))))
+	{
+		tmp_str++;
+		fw_ver_crnt.ver[i]=atoi(tmp_str);
+		if (fw_ver_crnt.ver[i] < fw_ver_valid->ver[i]) {
+			ret=1;
+			break;
+		} else if (fw_ver_crnt.ver[i] > fw_ver_valid->ver[i]) {
+			ret=0;
+			break;
+		}
+		tmp_str = strchr (tmp_str, '.');
+		i++;
+	}
+
+error:
+	return ret;
+}
+
 static int get_chip_arch(char *dev_name, enum wl12xx_arch *arch)
 {
 	int hw_ver, ret;
 
-	ret = do_get_drv_info(dev_name, &hw_ver);
+	ret = do_get_drv_info(dev_name, &hw_ver, NULL);
 	if (ret)
 		return 1;
 
