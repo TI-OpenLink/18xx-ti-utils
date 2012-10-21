@@ -1116,6 +1116,24 @@ struct conf_scan_settings {
 	 */
 	u32 max_dwell_time_active;
 
+	/*
+	 * The minimum time to wait on each channel for active scans
+	 * when there's a concurrent active interface. This should
+	 * lower than min_dwell_time_active usually in order to avoid
+	 * interfering with possible voip traffic on another interface.
+	 *
+	 * Range: u32 tu/1000
+	 */
+	u32 min_dwell_time_active_conc;
+
+	/*
+	 * The maximum time to wait on each channel for active scans
+	 * See explanation about min_dwell_time_active_conc
+	 *
+	 * Range: u32 tu/1000
+	 */
+	u32 max_dwell_time_active_conc;
+
 	/* time to wait on the channel for passive scans (in TU/1000) */
 	u32 dwell_time_passive;
 
@@ -1338,7 +1356,7 @@ struct conf_recovery_settings {
  * version, the two LSB are the lower driver's private conf
  * version.
  */
-#define WLCORE_CONF_VERSION	(0x0005 << 16)
+#define WLCORE_CONF_VERSION	(0x0006 << 16)
 #define WLCORE_CONF_MASK	0xffff0000
 #define WLCORE_CONF_SIZE	(sizeof(struct wlcore_conf_header) +	\
 				 sizeof(struct wlcore_conf))
@@ -1370,7 +1388,7 @@ struct wlcore_conf {
 };
 
 #define WL18XX_CONF_MAGIC	0x10e100ca
-#define WL18XX_CONF_VERSION	0x00050005
+#define WL18XX_CONF_VERSION	0x00060005
 #define WL18XX_CONF_MASK	0x0000ffff
 #define WL18XX_CONF_SIZE	(WLCORE_CONF_SIZE + \
 				 sizeof(struct wl18xx_priv_conf))
