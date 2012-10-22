@@ -83,6 +83,31 @@ out:
 	return ret;
 }
 
+static int fem_detect_valid_handler(struct nl_msg *msg, void *arg)
+{
+	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+	struct nlattr *td[WL1271_TM_ATTR_MAX + 1];
+	unsigned char *fem_manuf;
+
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
+		  genlmsg_attrlen(gnlh, 0), NULL);
+
+	if (!tb[NL80211_ATTR_TESTDATA]) {
+		fprintf(stderr, "no data!\n");
+		return NL_SKIP;
+	}
+
+	nla_parse(td, WL1271_TM_ATTR_MAX, nla_data(tb[NL80211_ATTR_TESTDATA]),
+		  nla_len(tb[NL80211_ATTR_TESTDATA]), NULL);
+
+	fem_manuf = (unsigned char*) nla_data(td[WL1271_TM_ATTR_DATA]);
+
+	printf("Firmware detect FEM type=%d\n", *fem_manuf);
+
+	return NL_SKIP;
+}
+
 static int plt_power_mode(struct nl80211_state *state, struct nl_cb *cb,
 			  struct nl_msg *msg, int argc, char **argv)
 {
@@ -95,9 +120,13 @@ static int plt_power_mode(struct nl80211_state *state, struct nl_cb *cb,
 	}
 
 	if (strcmp(argv[0], "on") == 0)
-		pmode = 1;
+		pmode = PLT_ON;
 	else if (strcmp(argv[0], "off") == 0)
-		pmode = 0;
+		pmode = PLT_OFF;
+	else if (strcmp(argv[0], "fem_detect") == 0)
+		pmode = PLT_FEM_DETECT;
+	else if (strcmp(argv[0], "chip_awake") == 0)
+		pmode = PLT_CHIP_AWAKE;
 	else {
 		fprintf(stderr, "%s> Invalid parameter\n", __func__);
 		return 2;
@@ -114,6 +143,9 @@ static int plt_power_mode(struct nl80211_state *state, struct nl_cb *cb,
 
 	nla_nest_end(msg, key);
 
+	if (pmode == PLT_FEM_DETECT)
+		nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, fem_detect_valid_handler, NULL);
+
 	return 0;
 
 nla_put_failure:
@@ -121,7 +153,7 @@ nla_put_failure:
 	return 2;
 }
 
-COMMAND(plt, power_mode, "<on|off>",
+COMMAND(plt, power_mode, "<on|off|fem_detect|chip_awake>",
 	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_power_mode,
 	"Set PLT power mode\n");
 

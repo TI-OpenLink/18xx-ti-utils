@@ -101,7 +101,7 @@ calibrator wlan0 plt tx_cont <delay> <rate> <size> <amount> <power> <seed> <pkt 
 calibrator wlan0 plt tx_stop
 calibrator wlan0 plt power_mode off
 
-Description: This test sends packets of data directly to air. It receives 
+Description: This test sends packets of data directly to air. It receives
 several parameters as described bellow, to enable diversity of
 operational modes.
 It is mostly used to see Energy and radio impact on Air.
@@ -164,7 +164,7 @@ calibrator wlan0 plt reset_rx_statcs
 	Update NVS file procedure
 
 This is procedure changes ini part of NVS file. It helps when there is need
-to change ini part of NVS which already calibrated. 
+to change ini part of NVS which already calibrated.
 
 calibrator set upd_nvs <ini file> [<old nvs file> [<new nvs file>]]
 
@@ -178,7 +178,7 @@ destination directory (usually /lib/firmware).
 
 calibrator get nvs_mac [<nvs filename>]
 
-	Set NVS to use auto FEM detection 
+	Set NVS to use auto FEM detection
 
 calibrator set autofem 1
 
@@ -249,6 +249,21 @@ it in PLT-mode:
 
    calibrator wlan0 plt power_mode on
 
+The following special plt power-on mode is available for WL6/WL7 devices and
+is used to detect the wlan FEM radio module type. This can be used in order
+to verify the fem manufacturer inside the ini file when using manual FEM detection.
+There is no need to do power_mode off after detect mode:
+
+   calibrator wlan0 plt power_mode fem_detect
+   ...
+   Firmware detect FEM type=1
+
+The following special plt power-on mode is used to power the chip on without
+downloading fw and enabling driver functionality except SDIO mem device.
+This can be used in order to bridge RTTT using SDIO:
+
+   calibrator wlan0 plt power_mode chip_awake
+
 And to turn it off (so that it can be booted in normal mode by putting
 the wlan0 interface up again):
 
@@ -276,10 +291,10 @@ air:
 
    Eg., to use channel 1 with 40MHz Minus  bandwidth:
 	calibrator wlan0 wl18xx_plt tune_channel 1 0 2
-   
+
    Eg., to use channel 1 with 40MHz Plus bandwidth:
 	calibrator wlan0 wl18xx_plt tune_channel 1 0 3
-   
+
 3. Start transmitting packets:
 
    calibrator wlan0 wl18xx_plt start_tx <delay> <rate> <size> <mode> <data_type> <gi> <options1> <options2> <source MAC> <dest MAC> <20|40>
@@ -362,9 +377,9 @@ antennas and RF in general is working properly.
 5. Stop gathering RX statistics:
 
    calibrator wlan0 wl18xx_plt stop_rx
-   
-   
-   
+
+
+
 --- TX set power in wl18xx
 
 1. Boot the firmware in PLT mode:
@@ -375,8 +390,8 @@ antennas and RF in general is working properly.
 
    calibrator wlan0 wl18xx_plt tune_channel <channel> <band> <bandwidth>
 
-3. set the power 
- 
+3. set the power
+
    calibrator wlan0 wl18xx_plt set_tx_power <output_power> <level> <band>
                  <primary_channel> <2nd_channel> <antenna> <non_serving_channel>
                   <channel_limitation> <frontend_limit> <gain_calculation>
@@ -424,8 +439,8 @@ antennas and RF in general is working properly.
 	calibrator wlan0 wl18xx_plt set_tx_power 20000 0 0 11 0 0 0 0 0 1 0 0
 
 4. start transmit (see start TX)
-   
-   
+
+
 ---  Set antenna mode in wl18xx
 
 1. Boot the firmware in PLT mode:

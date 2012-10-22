@@ -187,6 +187,13 @@ enum wl1271_test_cmds {
 	MAX_TEST_CMD_ID = 0xFF
 };
 
+enum plt_mode {
+	PLT_OFF = 0,
+	PLT_ON = 1,
+	PLT_FEM_DETECT = 2,
+	PLT_CHIP_AWAKE = 3,
+};
+
 struct wl1271_cmd_header {
 	__u16 id;
 	__u16 status;
