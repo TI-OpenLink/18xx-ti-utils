@@ -2,7 +2,7 @@
  *
  * Description: wl Firmware Log Service for off-line and real-time log viewing
  * Maintainer: gil.barak@ti.com
- * Last Update: 14/08/2012
+ * Last Update: 11/09/2012
  *
  */
 #include <stdio.h>
@@ -17,7 +17,7 @@
 #include <netinet/in.h>
 #include <signal.h>
 #include <errno.h>
-
+#include <pthread.h>
 
 /* Defines */
 #define INVALID_HANDLE -1
@@ -26,7 +26,7 @@
 #define FILE_NAME_PREV "wl_fwlog_prev.log"
 
 #define BUFFER_SIZE 1024
-#define FILE_POLL_INTERVAL 60 // in seconds
+#define FILE_POLL_INTERVAL 5 // in seconds
 #define KEEP_ALIVE_INTERVAL 1 // in seconds
 #define MAX_PATH 256
 #define MAX_FILE_SIZE 100000000 // Max file size is 100mb
@@ -35,7 +35,7 @@
 
 /* Globals */
 int socket_connected = 0;
-int socket_enabled = 0;
+int socket_enabled = 1;
 /***********/
 
 
@@ -71,7 +71,7 @@ int create_listen_socket(int listen_port)
 	if(listen_port == 0)
 	{
 		socket_enabled = 0;
-		return -1;
+		return INVALID_HANDLE;
 	}
 
 	listen_sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -229,23 +229,23 @@ int open_fwlog(int fp_fwlog, char *file_path)
 
 // ************************************************** //
 //
-// Function Name: read_fwlog
+// Function Name: read_file
 //
 // Description:
-//				read the binary logs from the fwlog
+//				read the binary logs from the file
 //				into the buffer
 //
 // Return:
-//			file handle to fwlog
+//			file handle
 //
 // ************************************************** //
-int read_fwlog(int fp_fwlog, char *buffer)
+int read_file(int fp_file, char *buffer)
 {
 	int n = 0;
 	bzero(buffer,BUFFER_SIZE);
 
 	// Attempt to read logs from the fwlog
-	n = read(fp_fwlog,buffer,BUFFER_SIZE);
+	n = read(fp_file,buffer,BUFFER_SIZE);
 	if (n < 0)
 	{
 		error("reading from file\r\n");
@@ -254,16 +254,16 @@ int read_fwlog(int fp_fwlog, char *buffer)
 	return n;
 }
 
-void backup_log(int fp_bkplog, char *buffer, int buf_size)
+void backup_file(int fp_bkp, char *buffer, int buf_size)
 {
 	int wr_bytes = 0;
 
 	do
 	{
-		wr_bytes = write(fp_bkplog, buffer, buf_size);
+		wr_bytes = write(fp_bkp, buffer, buf_size);
 		if(wr_bytes < 0)
 		{
-			error("writing to backup log!");
+			error("writing to backup file!");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -276,9 +276,8 @@ int create_file(char *filename)
 #ifdef ANDROID
 	fp_bkplog = open(filename, O_RDWR|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);
 #else
-        fp_bkplog = open(filename, O_RDWR|O_TRUNC|O_CREAT, S_IREAD|S_IWRITE);
+	fp_bkplog = open(filename, O_RDWR|O_TRUNC|O_CREAT, S_IREAD|S_IWRITE);
 #endif
-
 	if (fp_bkplog == INVALID_HANDLE)
 	{
 		error("Could not open output log file");
@@ -287,13 +286,50 @@ int create_file(char *filename)
 
 	return fp_bkplog;
 }
+/*
+void core_dump_thread( void *ptr)
+{
+	char buffer[BUFFER_SIZE + 1] = {0}; // +1 for safety
+	int fp_fwdump = INVALID_HANDLE;
+	int fp_fwdumpbkp = INVALID_HANDLE;
+	int buf_size = 0;
+
+	while(1)
+	{
+		if(fp_fwdump == INVALID_HANDLE)
+		{
+			fp_fwdump = open(fp_fwdump, O_RDONLY);
+			continue;
+		}
+
+		if(fp_fwdumpbkp == INVALID_HANDLE)
+		{
+			fp_fwdumpbkp = open(filename, O_RDWR|O_TRUNC|O_CREAT, S_IREAD|S_IWRITE);
+			continue;
+		}
+
+		// Read the core_dump sysfs file - This is a blocking function
+		buf_size = read_file(fp_fwdump, buffer);
+
+		while( (buf_size = read_file(fp_fwdump, buffer)) != 0)
+		{
+			backup_file(fp_fwdumpbkp, buffer, buf_size);
+		}
+
+		close(fp_fwdumpbkp);
+		close(fp_fwdump);
+	}
+	pthread_exit(0);
+}
+*/
+
 // ************************************************** //
 //
 // Function Name: main
 //
 // Description:
 //
-//x
+//
 //
 //
 // ************************************************** //
@@ -308,7 +344,7 @@ int main(int argc, char *argv[])
      char filename_prev[MAX_PATH + 1] = {0}; // +1 for safety
      uint max_file_size = MAX_FILE_SIZE;
      struct stat st;
-
+     pthread_t thread;
 
      if (argc < 3)
      {
@@ -330,11 +366,14 @@ int main(int argc, char *argv[])
 
      // Create the backup file names
      strncpy(filename,argv[3], MAX_PATH - sizeof(FILE_NAME));
-     strncpy(filename_prev,argv[3], MAX_PATH - sizeof(FILE_NAME));
+     strncpy(filename_prev,argv[3], MAX_PATH - sizeof(FILE_NAME_PREV));
      strcat(filename, FILE_NAME);
      strcat(filename_prev, FILE_NAME_PREV);
 
      fp_bkplog = create_file(filename);
+
+     // Create the core_dump thread
+     //pthread_create(&thread, NULL, (void *) &core_dump_thread, NULL);
 
      // Main Loop
      while(1)
@@ -349,7 +388,7 @@ int main(int argc, char *argv[])
     	 if(fp_fwlog != INVALID_HANDLE)
     	 {
 			 // Read the fwlog sysfs file - This is a blocking function
-			 buf_size = read_fwlog(fp_fwlog, buffer);
+			 buf_size = read_file(fp_fwlog, buffer);
 
 			 if(buf_size == INVALID_HANDLE)
 			 {
@@ -373,7 +412,7 @@ int main(int argc, char *argv[])
 			 if(buf_size > 0)
 			 {
 				 // write the log data into the backup file
-				 backup_log(fp_bkplog, buffer, buf_size);
+				 backup_file(fp_bkplog, buffer, buf_size);
 
 				 // Try to send the logs to the remote client
 				 send_data(client_sock, buffer, buf_size);
