@@ -55,7 +55,9 @@ LOCAL_MODULE := wl_logproxy
 include $(BUILD_EXECUTABLE)
 
 include $(LOCAL_PATH)/hw/Android.mk
+LOCAL_PATH=$(LOCAL_DIR)
 
+include $(LOCAL_PATH)/asi/Android.mk
 #
 # UIM Application
 #
