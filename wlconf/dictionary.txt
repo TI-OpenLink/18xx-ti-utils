@@ -6,7 +6,8 @@ ClockValidOnWakeUp		wl18xx.phy.clock_valid_on_wake_up
 SecondaryClockSettingTime	wl18xx.phy.secondary_clock_setting_time
 Spare0				wl18xx.phy.spare0
 Spare1				wl18xx.phy.spare1
-Spare2				wl18xx.phy.spare2
+PerChanBoMode11ABG		wl18xx.phy.per_chan_bo_mode_11_abg
+PerChanBoMode11P		wl18xx.phy.per_chan_bo_mode_11_p
 AutoDetect			wl18xx.phy.auto_detect
 Dedicated_FEM			wl18xx.phy.dedicated_fem
 LowBand_component		wl18xx.phy.low_band_component
