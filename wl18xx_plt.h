@@ -89,6 +89,12 @@ struct wl18xx_cmd_channel_tune {
 struct wl18xx_cmd_start_rx {
 	struct wl1271_cmd_header header;
 	struct wl1271_cmd_test_header test;
+
+	__le32 radio_status;
+
+	__le32 magic_num;
+	__u8   src_addr[MAC_ADDR_LEN];
+	__u8   dst_addr[MAC_ADDR_LEN];
 } __attribute__((packed));
 
 struct wl18xx_cmd_stop_rx {
