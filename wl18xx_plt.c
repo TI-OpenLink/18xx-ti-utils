@@ -388,16 +388,24 @@ COMMAND(wl18xx_plt, tune_channel, "<channel> <band> <bandwidth>",
 	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_tune_channel,
 	"Set channel, band and bandwidth for PLT.\n");
 
+#define RX_FILTER_MAGIC_NUMBER 0xabadabad
+
 static int plt_wl18xx_start_rx(struct nl80211_state *state, struct nl_cb *cb,
 			       struct nl_msg *msg, int argc, char **argv)
 {
 	struct nlattr *key;
 	struct wl18xx_cmd_start_rx prms;
 
-	if (argc != 0)
+	if (argc > 2)
 		return 1;
 
-	prms.test.id	= WL18XX_TEST_CMD_START_RX_SIMULATION;
+	prms.test.id    = WL18XX_TEST_CMD_START_RX_SIMULATION;
+
+	if (argc == 2) {
+		str2mac(prms.src_addr, argv[0]);
+		str2mac(prms.dst_addr, argv[1]);
+		prms.magic_num = RX_FILTER_MAGIC_NUMBER;
+	}
 
 	key = nla_nest_start(msg, NL80211_ATTR_TESTDATA);
 	if (!key) {
@@ -417,7 +425,7 @@ nla_put_failure:
 	return 2;
 }
 
-COMMAND(wl18xx_plt, start_rx, "",
+COMMAND(wl18xx_plt, start_rx, "<source address> <destination address>",
 	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_start_rx,
 	"Start gathering RX statistics for PLT.\n");
 
