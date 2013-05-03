@@ -1,0 +1,548 @@
+struct wlcore_conf_file {
+struct wlcore_conf_header {
+	__le32 magic[1]
+	__le32 version[1]
+	__le32 checksum[1]
+} /* wlcore_conf_header */
+struct wlcore_conf {
+struct conf_sg_settings {
+	u32 params[67]
+	u8 state[1]
+} /* conf_sg_settings */
+struct conf_rx_settings {
+	u32 rx_msdu_life_time[1]
+	u32 packet_detection_threshold[1]
+	u16 ps_poll_timeout[1]
+	u16 upsd_timeout[1]
+	u16 rts_threshold[1]
+	u16 rx_cca_threshold[1]
+	u16 irq_blk_threshold[1]
+	u16 irq_pkt_threshold[1]
+	u16 irq_timeout[1]
+	u8 queue_type[1]
+} /* conf_rx_settings */
+struct conf_tx_settings {
+	u8 tx_energy_detection[1]
+struct conf_tx_rate_class {
+	u32 enabled_rates[1]
+	u8 short_retry_limit[1]
+	u8 long_retry_limit[1]
+	u8 aflags[1]
+} /* conf_tx_rate_class */
+	u8 ac_conf_count[1]
+struct conf_tx_ac_category {
+	u8 ac[1]
+	u8 cw_min[1]
+	u16 cw_max[1]
+	u8 aifsn[1]
+	u16 tx_op_limit[1]
+} /* conf_tx_ac_category */
+struct conf_tx_ac_category {
+	u8 ac[1]
+	u8 cw_min[1]
+	u16 cw_max[1]
+	u8 aifsn[1]
+	u16 tx_op_limit[1]
+} /* conf_tx_ac_category */
+struct conf_tx_ac_category {
+	u8 ac[1]
+	u8 cw_min[1]
+	u16 cw_max[1]
+	u8 aifsn[1]
+	u16 tx_op_limit[1]
+} /* conf_tx_ac_category */
+struct conf_tx_ac_category {
+	u8 ac[1]
+	u8 cw_min[1]
+	u16 cw_max[1]
+	u8 aifsn[1]
+	u16 tx_op_limit[1]
+} /* conf_tx_ac_category */
+	u8 max_tx_retries[1]
+	u16 ap_aging_period[1]
+	u8 tid_conf_count[1]
+struct conf_tx_tid {
+	u8 queue_id[1]
+	u8 channel_type[1]
+	u8 tsid[1]
+	u8 ps_scheme[1]
+	u8 ack_policy[1]
+	u32 apsd_conf[2]
+} /* conf_tx_tid */
+struct conf_tx_tid {
+	u8 queue_id[1]
+	u8 channel_type[1]
+	u8 tsid[1]
+	u8 ps_scheme[1]
+	u8 ack_policy[1]
+	u32 apsd_conf[2]
+} /* conf_tx_tid */
+struct conf_tx_tid {
+	u8 queue_id[1]
+	u8 channel_type[1]
+	u8 tsid[1]
+	u8 ps_scheme[1]
+	u8 ack_policy[1]
+	u32 apsd_conf[2]
+} /* conf_tx_tid */
+struct conf_tx_tid {
+	u8 queue_id[1]
+	u8 channel_type[1]
+	u8 tsid[1]
+	u8 ps_scheme[1]
+	u8 ack_policy[1]
+	u32 apsd_conf[2]
+} /* conf_tx_tid */
+struct conf_tx_tid {
+	u8 queue_id[1]
+	u8 channel_type[1]
+	u8 tsid[1]
+	u8 ps_scheme[1]
+	u8 ack_policy[1]
+	u32 apsd_conf[2]
+} /* conf_tx_tid */
+struct conf_tx_tid {
+	u8 queue_id[1]
+	u8 channel_type[1]
+	u8 tsid[1]
+	u8 ps_scheme[1]
+	u8 ack_policy[1]
+	u32 apsd_conf[2]
+} /* conf_tx_tid */
+struct conf_tx_tid {
+	u8 queue_id[1]
+	u8 channel_type[1]
+	u8 tsid[1]
+	u8 ps_scheme[1]
+	u8 ack_policy[1]
+	u32 apsd_conf[2]
+} /* conf_tx_tid */
+struct conf_tx_tid {
+	u8 queue_id[1]
+	u8 channel_type[1]
+	u8 tsid[1]
+	u8 ps_scheme[1]
+	u8 ack_policy[1]
+	u32 apsd_conf[2]
+} /* conf_tx_tid */
+	u16 frag_threshold[1]
+	u16 tx_compl_timeout[1]
+	u16 tx_compl_threshold[1]
+	u32 basic_rate[1]
+	u32 basic_rate_5[1]
+	u8 tmpl_short_retry_limit[1]
+	u8 tmpl_long_retry_limit[1]
+	u32 tx_watchdog_timeout[1]
+} /* conf_tx_settings */
+struct conf_conn_settings {
+	u8 wake_up_event[1]
+	u8 listen_interval[1]
+	u8 suspend_wake_up_event[1]
+	u8 suspend_listen_interval[1]
+	u8 bcn_filt_mode[1]
+	u8 bcn_filt_ie_count[1]
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+struct conf_bcn_filt_rule {
+	u8 ie[1]
+	u8 rule[1]
+	u8 oui[3]
+	u8 type[1]
+	u8 version[2]
+} /* conf_bcn_filt_rule */
+	u32 synch_fail_thold[1]
+	u32 bss_lose_timeout[1]
+	u32 beacon_rx_timeout[1]
+	u32 broadcast_timeout[1]
+	u8 rx_broadcast_in_ps[1]
+	u8 ps_poll_threshold[1]
+struct conf_sig_weights {
+	u8 rssi_bcn_avg_weight[1]
+	u8 rssi_pkt_avg_weight[1]
+	u8 snr_bcn_avg_weight[1]
+	u8 snr_pkt_avg_weight[1]
+} /* conf_sig_weights */
+	u8 bet_enable[1]
+	u8 bet_max_consecutive[1]
+	u8 psm_entry_retries[1]
+	u8 psm_exit_retries[1]
+	u8 psm_entry_nullfunc_retries[1]
+	u16 dynamic_ps_timeout[1]
+	u8 forced_ps[1]
+	u32 keep_alive_interval[1]
+	u8 max_listen_interval[1]
+	u8 sta_sleep_auth[1]
+} /* conf_conn_settings */
+struct conf_itrim_settings {
+	u8 enable[1]
+	u32 timeout[1]
+} /* conf_itrim_settings */
+struct conf_pm_config_settings {
+	u32 host_clk_settling_time[1]
+	u8 host_fast_wakeup_support[1]
+} /* conf_pm_config_settings */
+struct conf_roam_trigger_settings {
+	u16 trigger_pacing[1]
+	u8 avg_weight_rssi_beacon[1]
+	u8 avg_weight_rssi_data[1]
+	u8 avg_weight_snr_beacon[1]
+	u8 avg_weight_snr_data[1]
+} /* conf_roam_trigger_settings */
+struct conf_scan_settings {
+	u32 min_dwell_time_active[1]
+	u32 max_dwell_time_active[1]
+	u32 dwell_time_passive[1]
+	u32 dwell_time_dfs[1]
+	u16 num_probe_reqs[1]
+	u32 split_scan_timeout[1]
+} /* conf_scan_settings */
+struct conf_sched_scan_settings {
+	u32 base_dwell_time[1]
+	u32 max_dwell_time_delta[1]
+	u32 dwell_time_delta_per_probe[1]
+	u32 dwell_time_delta_per_probe_5[1]
+	u32 dwell_time_passive[1]
+	u32 dwell_time_dfs[1]
+	u8 num_probe_reqs[1]
+	s8 rssi_threshold[1]
+	s8 snr_threshold[1]
+} /* conf_sched_scan_settings */
+struct conf_ht_setting {
+	u8 rx_ba_win_size[1]
+	u8 tx_ba_win_size[1]
+	u16 inactivity_timeout[1]
+	u8 tx_ba_tid_bitmap[1]
+} /* conf_ht_setting */
+struct conf_memory_settings {
+	u8 num_stations[1]
+	u8 ssid_profiles[1]
+	u8 rx_block_num[1]
+	u8 tx_min_block_num[1]
+	u8 dynamic_memory[1]
+	u8 min_req_tx_blocks[1]
+	u8 min_req_rx_blocks[1]
+	u8 tx_min[1]
+} /* conf_memory_settings */
+struct conf_fm_coex {
+	u8 enable[1]
+	u8 swallow_period[1]
+	u8 n_divider_fref_set_1[1]
+	u8 n_divider_fref_set_2[1]
+	u16 m_divider_fref_set_1[1]
+	u16 m_divider_fref_set_2[1]
+	u32 coex_pll_stabilization_time[1]
+	u16 ldo_stabilization_time[1]
+	u8 fm_disturbed_band_margin[1]
+	u8 swallow_clk_diff[1]
+} /* conf_fm_coex */
+struct conf_rx_streaming_settings {
+	u32 duration[1]
+	u8 queues[1]
+	u8 interval[1]
+	u8 always[1]
+} /* conf_rx_streaming_settings */
+struct conf_fwlog {
+	u8 mode[1]
+	u8 mem_blocks[1]
+	u8 severity[1]
+	u8 timestamp[1]
+	u8 output[1]
+	u8 threshold[1]
+} /* conf_fwlog */
+struct conf_rate_policy_settings {
+	u16 rate_retry_score[1]
+	u16 per_add[1]
+	u16 per_th1[1]
+	u16 per_th2[1]
+	u16 max_per[1]
+	u8 inverse_curiosity_factor[1]
+	u8 tx_fail_low_th[1]
+	u8 tx_fail_high_th[1]
+	u8 per_alpha_shift[1]
+	u8 per_add_shift[1]
+	u8 per_beta1_shift[1]
+	u8 per_beta2_shift[1]
+	u8 rate_check_up[1]
+	u8 rate_check_down[1]
+	u8 rate_retry_policy[13]
+} /* conf_rate_policy_settings */
+struct conf_hangover_settings {
+	u32 recover_time[1]
+	u8 hangover_period[1]
+	u8 dynamic_mode[1]
+	u8 early_termination_mode[1]
+	u8 max_period[1]
+	u8 min_period[1]
+	u8 increase_delta[1]
+	u8 decrease_delta[1]
+	u8 quiet_time[1]
+	u8 increase_time[1]
+	u8 window_size[1]
+} /* conf_hangover_settings */
+struct conf_recovery_settings {
+	u8 bug_on_recovery[1]
+	u8 no_recovery[1]
+} /* conf_recovery_settings */
+} /* wlcore_conf */
+struct wl18xx_priv_conf {
+struct wl18xx_ht_settings {
+	u8 mode[1]
+} /* wl18xx_ht_settings */
+struct wl18xx_mac_and_phy_params {
+	u8 phy_standalone[1]
+	u8 rdl[1]
+	u8 enable_clpc[1]
+	u8 enable_tx_low_pwr_on_siso_rdl[1]
+	u8 auto_detect[1]
+	u8 dedicated_fem[1]
+	u8 low_band_component[1]
+	u8 low_band_component_type[1]
+	u8 high_band_component[1]
+	u8 high_band_component_type[1]
+	u8 number_of_assembled_ant2_4[1]
+	u8 number_of_assembled_ant5[1]
+	u8 pin_muxing_platform_options[2]
+	u8 external_pa_dc2dc[1]
+	u8 tcxo_ldo_voltage[1]
+	u8 xtal_itrim_val[1]
+	u8 srf_state[1]
+	u8 srf1[16]
+	u8 srf2[16]
+	u8 srf3[16]
+	u8 io_configuration[1]
+	u8 sdio_configuration[1]
+	u8 settings[1]
+	u8 rx_profile[1]
+	u8 per_chan_pwr_limit_arr_11abg[150]
+	u8 pwr_limit_reference_11_abg[1]
+	u8 per_chan_pwr_limit_arr_11p[7]
+	u8 pwr_limit_reference_11p[1]
+	u8 per_sub_band_tx_trace_loss[9]
+	u8 per_sub_band_rx_trace_loss[9]
+	u8 primary_clock_setting_time[1]
+	u8 clock_valid_on_wake_up[1]
+	u8 secondary_clock_setting_time[1]
+	u8 board_type[1]
+	u8 psat[1]
+	s8 low_power_val[1]
+	s8 med_power_val[1]
+	s8 high_power_val[1]
+	u8 padding[1]
+} /* wl18xx_mac_and_phy_params */
+} /* wl18xx_priv_conf */
+} /* wlcore_conf_file */

@@ -278,7 +278,7 @@ static int set_fem_manuf(struct nl80211_state *state, struct nl_cb *cb,
 	return 0;
 }
 
-COMMAND(set, fem_manuf, "<0|1> [<nvs file>]", 0, 0, CIB_NONE, set_fem_manuf,
+COMMAND(set, fem_manuf, "<0|1|2|3> [<nvs file>]", 0, 0, CIB_NONE, set_fem_manuf,
 	"Set FEM manufacturer");
 
 static int get_drv_info(struct nl80211_state *state, struct nl_cb *cb,
@@ -292,7 +292,7 @@ static int get_drv_info(struct nl80211_state *state, struct nl_cb *cb,
 		return 2;
 	}
 
-	return do_get_drv_info(argv[0], NULL);
+	return do_get_drv_info(argv[0], NULL, NULL);
 }
 
 COMMAND(get, drv_info, "<device name>", 0, 0, CIB_NONE, get_drv_info,
@@ -311,7 +311,7 @@ static int get_hw_version(struct nl80211_state *state, struct nl_cb *cb,
 		return 2;
 	}
 
-	ret = do_get_drv_info(argv[0], &chip_id);
+	ret = do_get_drv_info(argv[0], &chip_id, NULL);
 	if (!ret)
 		printf("%08X\n", chip_id);
 

@@ -27,7 +27,7 @@
 
 #define BUFFER_SIZE 1024
 #define FILE_POLL_INTERVAL 5 // in seconds
-#define KEEP_ALIVE_INTERVAL 30 // in seconds
+#define KEEP_ALIVE_INTERVAL 1 // in seconds
 #define MAX_PATH 256
 #define MAX_FILE_SIZE 100000000 // Max file size is 100mb
 /***********/

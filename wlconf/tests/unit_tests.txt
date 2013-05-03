@@ -1,0 +1,346 @@
+wlconf unit tests
+=================
+
+Author: Luciano Coelho <coelho@ti.com>
+
+Copyright (C) 2012, Texas Instruments Inc.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 2 as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+USA
+
+1. BINARY FILE VALIDITY CHECKS
+------------------------------
+
+The binary file contains 3 values that are used for validity and
+corruption checks: magic, version and checksum.
+
+1.1. Conf file with valid header values
+
+     Make sure the input file (test-1.1-conf.bin) contains
+     0x10e100ca in its first 4 bytes, then 4 bytes with the correct
+     version number for the current struct (eg. 0x00010001), then a
+     correctly calculated CRC32 checksum and run:
+
+	./wlconf -g header.magic -i tests/test-1.1-conf.bin
+
+     Expected result: the tool returns the value of header.conf and it
+     is 0x10e100ca.
+
+1.2 Conf file with invalid magic number
+
+     Make sure the input file (test-1.2-conf.bin) contains
+     0xffffffff at bytes 0-3 and run:
+
+	./wlconf -g header.magic -i tests/test-1.2-conf.bin
+
+     Expected result: the tool should reject the file and print an
+     error.
+
+1.3 Conf file with invalid version number
+
+     Make sure the input file (test-1.3-conf.bin) contains
+     0xffffffff at bytes 4-7 and run:
+
+	./wlconf -g header.magic -i tests/test-1.3-conf.bin
+
+     Expected result: the tool should reject the file and print an
+     error.
+
+1.4 Conf file with invalid checksum
+
+     Make sure the input file (test-1.4-conf.bin) contains
+     0xffffffff at bytes 8-11 and run:
+
+	./wlconf -g header.magic -i tests/test-1.4-conf.bin
+
+     Expected result: the tool should reject the file and print an
+     error.
+
+1.5 Generate correct checksum when changing a value
+
+    Run the following command:
+
+	./wlconf -s wl18xx.phy.rdl=0xff -i tests/test-1.5-conf.bin -o tests/result-1.5-conf.bin
+
+    Then read the value with:
+
+	./wlconf -g wl18xx.phy.rdl -i tests/result-1.5-conf.bin
+
+    Expected result: the tool should be able to read the new value
+    (0xff) without reporting binary corruption. (Note: this test
+    depends on the success of test 1.4).
+
+1.6 Ignore invalid checksum from conf file
+
+     Make sure the input file (test-1.6-conf.bin) contains
+     0xffffffff at bytes 8-11 and run:
+
+	./wlconf -g header.magic -i tests/test-1.6-conf.bin -X
+
+     Expected result:  the tool should be able to read the value and
+     print it out (0x10e100ca).
+
+
+2. TEXT CONFIGURATION PARSING
+-----------------------------
+
+2.1 Valid text configuration file
+
+    Make sure you have a valid text configuration file (test-2.1.conf)
+    and run:
+
+	./wlconf -C tests/test-2.1.conf -o tests/result-2.1-conf.bin
+
+    Check that the values were correctly set in the output binary:
+
+	./wlconf -g wl18xx.phy.rdl -i tests/result-2.1-conf.bin
+	./wlconf -g wl18xx.phy.low_band_component -i tests/result-2.1-conf.bin
+	./wlconf -g wl18xx.phy.high_band_component_type -i tests/result-2.1-conf.bin
+	./wlconf -g wl18xx.phy.per_sub_band_tx_trace_loss -i tests/result-2.1-conf.bin
+
+    Expected results: the commands above must return the values as
+    specified in the conf text file: 0x01, 0x02, 0x03 and an array
+    with (0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8),
+    respectively.
+
+2.2 Text configuration file with inexistent element
+
+    Make sure some of the values in the text configuration file doesn't
+    exist (test-2.2.conf) and run:
+
+	./wlconf -C tests/test-2.2.dconf -o tests/result-2.2-conf.bin
+
+    Expected result: the tool should return an error specifying all
+    the elements that couldn't be found: wl18xx.phy.foo and
+    wl18xx.phy.bar.  The tests/result-2.2-conf.bin file should *not*
+    be generated.
+
+2.3 Text configuration file with invalid format
+
+    Make sure some of the lines in the text configuration file has a
+    wrong format (test-2.3.conf) and run:
+
+	./wlconf -C tests/test-2.3.conf -o tests/result-2.3-conf.bin
+
+    Expected result: the tool should return an error specifying all
+    the lines that couldn't be parsed: wl18xx.phy.rdl:0x01 and
+    wl18xx.phy.bar.  The output file shoud *not* be generated.
+
+2.4 Text configuration file with a incorrect array sizes
+
+    Make sure some of the lines contain more and less values in the
+    arrays than what is expected (test-2.4.conf) and run:
+
+	./wlconf -C tests/test-2.4.conf -o tests/result-2.4-conf.bin
+
+    Expected result: the tool should return an error specifying all
+    the lines that couldn't be parsed: "expected 9 got 5" and
+    "expected 9 got 10".  The output file shoud *not* be generated.
+
+
+3. INI FILE PARSING
+-------------------
+
+3.1 Valid INI file
+
+    Make sure you have a valid INI file (test-3.1.ini) and run:
+
+	./wlconf -I tests/test-3.1.ini -o tests/result-3.1-conf.bin
+
+    Check that the values were correctly set in the output binary:
+
+	./wlconf -g wl18xx.phy.rdl -i tests/result-3.1-conf.bin
+	./wlconf -g wl18xx.phy.low_band_component -i tests/result-3.1-conf.bin
+	./wlconf -g wl18xx.phy.high_band_component_type -i tests/result-3.1-conf.bin
+	./wlconf -g wl18xx.phy.per_sub_band_tx_trace_loss -i tests/result-3.1-conf.bin
+
+    Expected results: the commands above must return the values as
+    specified in the conf text file: 0xf1, 0xf2, 0xf3 and an array
+    with (0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7, 0xb8),
+    respectively.
+
+3.2 INI file with too long value
+
+    Make sure the INI file has one value that is over the
+    MAX_VALUE_STR_LEN (test-3.2.ini) and run:
+
+	./wlconf -I tests/test-3.2.ini
+
+    Expected result: the tool should return an error specifying all
+    the lines that contained too-long values.
+
+3.3 Use a valid real life INI file
+
+    Make sure you have a valid, real life INI file (test-3.3.ini) and
+    run:
+
+	./wlconf -I tests/test-3.3.ini -o tests/result-3.3-conf.bin
+
+    Check that some of the values were correctly set in the output
+    binary:
+
+	./wlconf -g wl18xx.phy.primary_clock_setting_time -i tests/result-3.3-conf.bin
+	./wlconf -g wl18xx.phy.low_band_component_type -i tests/result-3.3-conf.bin
+	./wlconf -g wl18xx.phy.high_band_component -i tests/result-3.3-conf.bin
+	./wlconf -g wl18xx.phy.per_sub_band_tx_trace_loss -i tests/result-3.3-conf.bin
+
+    Expected results: the commands above must return the values as
+    specified in the conf text file: 0x05, 0x04, 0x01 and an array
+    with (0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00),
+    respectively.
+
+3.4 INI file with inexistent element
+
+    Make sure some of the values in the INI file doesn't exist
+    (test-3.4.ini) in the dictionary.txt file and run:
+
+	./wlconf -I tests/test-3.4.ini -o tests/result-3.4-conf.bin
+
+    Expected result: the tool should return an error specifying all
+    the elements that couldn't be found: Foo_Bar and TexasInstruments.
+    The tests/result-3.4-conf.bin file should *not* be generated.
+
+3.5 INI file with invalid format
+
+    Make sure some of the lines in the INI file has a wrong format
+    (test-3.5.conf) and run:
+
+	./wlconf -I tests/test-3.5.ini -o tests/result-3.5-conf.bin
+
+    Expected result: the tool should return an error specifying all
+    the lines that couldn't be parsed: BarBaz and TInstruments:0.  The
+    output file shoud *not* be generated.
+
+3.6 INI file with too long array
+
+    Make sure the INI file has one array that is over the
+    MAX_ARRAY_STR_LEN (test-3.6.ini) and run:
+
+	./wlconf -I tests/test-3.6.ini
+
+    Expected result: the tool should return an error specifying all
+    the lines that contained too-long arrays.
+
+
+4. GETTING VALUES
+-----------------
+
+4.1 Get the value of an element
+
+    Make sure you have a valid input file (test-4.1-conf.bin) and run:
+
+	./wlconf -g core.hangover.quiet_time -i tests/test-4.1-conf.bin
+
+    Expected result: the tool should return the name of the element
+    followed by the correct value: "core.hangover.quiet_time = 0x04"
+
+4.2 Ensure that -g and -C are compatible
+
+    Make sure you have a valid input file (test-4.2-conf.bin) and run:
+
+	./wlconf -g core.hangover.quiet_time -i tests/test-4.2-conf.bin > tests/result-4.2.conf
+
+    Then write the result back with the following command:
+
+	./wlconf -C tests/result-4.2.conf -o tests/result-4.2-conf.bin
+
+    And read it again:
+
+	./wlconf -g core.hangover.quiet_time -i	tests/result-4.2-conf.bin
+
+    Expected result: the tool should return the same value as it
+    returned after the first command: "core.hangover.quiet_time = 0x04"
+
+4.3 Try to get an invalid value
+
+    Make sure you have a valid input file (test-4.3-conf.bin) and run:
+
+	./wlconf -g core.hangover.quiet -i tests/test-4.3-conf.bin
+
+    Expected result: the tool should return an error saying that the
+    element could not be found.  No output file should be generated.
+
+4.4 Get an entire structure
+
+    Make sure you have a valid input file (test-4.4-conf.bin) and run:
+
+	./wlconf -g core.sched_scan -i tests/test-4.4-conf.bin
+
+    Expected result: the tool should return a list of all elements
+    inside the core.sched_scan structure and their respective values:
+
+	core.sched_scan.base_dwell_time = 0x00001d4c
+	core.sched_scan.max_dwell_time_delta = 0x000057e4
+	core.sched_scan.dwell_time_delta_per_probe = 0x000007d0
+	core.sched_scan.dwell_time_delta_per_probe_5 = 0x0000015e
+	core.sched_scan.dwell_time_passive = 0x000186a0
+	core.sched_scan.dwell_time_dfs = 0x000249f0
+	core.sched_scan.num_probe_reqs = 0x02
+	core.sched_scan.rssi_threshold = 0xa6
+	core.sched_scan.snr_threshold = 0x00
+
+4.5 Get a structure and read back the generated output
+
+    Make sure you have a valid input file (test-4.5-conf.bin) and run:
+
+	./wlconf -g core.sched_scan -i tests/test-4.5-conf.bin > tests/result-4.5-1.conf
+
+    Then write the result back with the following command:
+
+	./wlconf -C tests/result-4.5-1.conf -o tests/result-4.5-conf.bin
+
+    And read it again:
+
+	./wlconf -g core.sched_scan -i tests/result-4.5-conf.bin > tests/result-4.5-2.conf
+
+    Compare the output configuration files:
+
+	diff -u tests/result-4.5-1.conf tests/result-4.5-2.conf
+
+    Expected result: there should be no difference between the
+    result-4.5-1.conf and result-4.5-2.conf files.
+
+4.6 Get the entire data and read back the generated output
+
+    Make sure you have a valid input file (test-4.6-conf.bin) and run:
+
+	./wlconf -g -i tests/test-4.6-conf.bin > tests/result-4.6-1.conf
+
+    Then write the result back with the following command:
+
+	./wlconf -C tests/result-4.6-1.conf -o tests/result-4.6-conf.bin
+
+    And read it again:
+
+	./wlconf -g -i tests/result-4.6-conf.bin > tests/result-4.6-2.conf
+
+    Compare the output configuration files:
+
+	diff -u tests/result-4.6-1.conf tests/result-4.6-2.conf
+
+    Expected result: there should be no difference between the
+    result-4.6-1.conf and result-4.6-2.conf files.
+
+4.7 Print the element tree structure with no data
+
+    Run the following command:
+
+	./wlconf -p > tests/result-4.7.struct
+
+    Then check that the output matches the pre-defined one:
+
+	diff -u tests/result-4.7.struct tests/test-4.7.struct
+
+    Expected result: there should be no difference between the
+    result-4.7.struct and test-4.7.struct files.

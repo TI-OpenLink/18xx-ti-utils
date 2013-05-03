@@ -25,7 +25,7 @@
 #include "plt.h"
 #include "ini.h"
 
-char calibrator_version[] = "0.73";
+char calibrator_version[] = "0.77";
 #ifndef CONFIG_LIBNL20
 /* libnl 2.0 compatibility code */
 
@@ -468,7 +468,8 @@ int main(int argc, char **argv)
 		argv++;
 	}
 
-	if (argc > 0 && strcmp(*argv, "--version") == 0) {
+	if (argc > 0 && ((strcmp(*argv, "--version") == 0) ||
+			 (strcmp(*argv, "-v") == 0))) {
 		version();
 		return 0;
 	}
@@ -526,4 +527,14 @@ int main(int argc, char **argv)
 	nl80211_cleanup(&nlstate);
 
 	return err;
+}
+
+void str2mac(unsigned char *pmac, char *pch)
+{
+	int i;
+
+	for (i = 0; i < MAC_ADDR_LEN; i++) {
+		pmac[i] = (unsigned char)strtoul(pch, &pch, 16);
+		pch++;
+	}
 }

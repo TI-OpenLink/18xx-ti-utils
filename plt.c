@@ -83,14 +83,29 @@ out:
 	return ret;
 }
 
-static void str2mac(unsigned char *pmac, char *pch)
+static int fem_detect_valid_handler(struct nl_msg *msg, void *arg)
 {
-	int i;
+	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+	struct nlattr *td[WL1271_TM_ATTR_MAX + 1];
+	unsigned char *fem_manuf;
 
-	for (i = 0; i < MAC_ADDR_LEN; i++) {
-		pmac[i] = (unsigned char)strtoul(pch, &pch, 16);
-		pch++;
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
+		  genlmsg_attrlen(gnlh, 0), NULL);
+
+	if (!tb[NL80211_ATTR_TESTDATA]) {
+		fprintf(stderr, "no data!\n");
+		return NL_SKIP;
 	}
+
+	nla_parse(td, WL1271_TM_ATTR_MAX, nla_data(tb[NL80211_ATTR_TESTDATA]),
+		  nla_len(tb[NL80211_ATTR_TESTDATA]), NULL);
+
+	fem_manuf = (unsigned char*) nla_data(td[WL1271_TM_ATTR_DATA]);
+
+	printf("Firmware detect FEM type=%d\n", *fem_manuf);
+
+	return NL_SKIP;
 }
 
 static int plt_power_mode(struct nl80211_state *state, struct nl_cb *cb,
@@ -105,9 +120,13 @@ static int plt_power_mode(struct nl80211_state *state, struct nl_cb *cb,
 	}
 
 	if (strcmp(argv[0], "on") == 0)
-		pmode = 1;
+		pmode = PLT_ON;
 	else if (strcmp(argv[0], "off") == 0)
-		pmode = 0;
+		pmode = PLT_OFF;
+	else if (strcmp(argv[0], "fem_detect") == 0)
+		pmode = PLT_FEM_DETECT;
+	else if (strcmp(argv[0], "chip_awake") == 0)
+		pmode = PLT_CHIP_AWAKE;
 	else {
 		fprintf(stderr, "%s> Invalid parameter\n", __func__);
 		return 2;
@@ -124,6 +143,9 @@ static int plt_power_mode(struct nl80211_state *state, struct nl_cb *cb,
 
 	nla_nest_end(msg, key);
 
+	if (pmode == PLT_FEM_DETECT)
+		nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, fem_detect_valid_handler, NULL);
+
 	return 0;
 
 nla_put_failure:
@@ -131,7 +153,7 @@ nla_put_failure:
 	return 2;
 }
 
-COMMAND(plt, power_mode, "<on|off>",
+COMMAND(plt, power_mode, "<on|off|fem_detect|chip_awake>",
 	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_power_mode,
 	"Set PLT power mode\n");
 
@@ -231,7 +253,7 @@ static int calib_valid_handler(struct nl_msg *msg, void *arg)
 	prms = (struct wl1271_cmd_cal_p2g *)nla_data(td[WL1271_TM_ATTR_DATA]);
 
 	if (prms->radio_status) {
-		fprintf(stderr, "Fail to calibrate ith radio status (%d)\n",
+		fprintf(stderr, "Fail to calibrate with radio status (%d)\n",
 			(signed short)prms->radio_status);
 		return 2;
 	}
@@ -276,7 +298,9 @@ static void dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
 		info->fw_version, info->bus_info, regs->version);
 }
 
-int do_get_drv_info(char *dev_name, int *hw_ver)
+
+int do_get_drv_info(char *dev_name, int *hw_ver,
+		    struct ethtool_drvinfo *out_drvinfo)
 {
 	struct ifreq ifr;
 	int fd, err;
@@ -317,7 +341,9 @@ int do_get_drv_info(char *dev_name, int *hw_ver)
 
 	if (hw_ver)
 		*hw_ver = regs->version;
-	else
+	if (out_drvinfo)
+		*out_drvinfo=drvinfo;
+	if (!hw_ver && !out_drvinfo)
 		dump_regs(&drvinfo, regs);
 	free(regs);
 
@@ -332,11 +358,50 @@ error_out:
 	return 1;
 }
 
+int is_fw_ver_valid(char *dev_name, struct fw_version *fw_ver_valid)
+{
+	char *str, *tmp_str;
+	struct ethtool_drvinfo drvinfo;
+	char sep = '.';
+	int i=0, ret=0;
+	struct fw_version fw_ver_crnt;
+
+	ret = do_get_drv_info(dev_name, NULL, &drvinfo);
+	if(ret)	{
+		printf("\tFailed to get FW version.\n");
+		goto error;
+	}
+
+	str=drvinfo.fw_version;
+
+	/* Looking for the last space in the version.*/
+	/* Usually version starting with text and value after spacing.*/
+	tmp_str = strrchr (str,' ');
+	while((tmp_str != NULL) &&
+	      (i < (int) (sizeof(fw_ver_valid->ver)/sizeof(int))))
+	{
+		tmp_str++;
+		fw_ver_crnt.ver[i]=atoi(tmp_str);
+		if (fw_ver_crnt.ver[i] < fw_ver_valid->ver[i]) {
+			ret=1;
+			break;
+		} else if (fw_ver_crnt.ver[i] > fw_ver_valid->ver[i]) {
+			ret=0;
+			break;
+		}
+		tmp_str = strchr (tmp_str, '.');
+		i++;
+	}
+
+error:
+	return ret;
+}
+
 static int get_chip_arch(char *dev_name, enum wl12xx_arch *arch)
 {
 	int hw_ver, ret;
 
-	ret = do_get_drv_info(dev_name, &hw_ver);
+	ret = do_get_drv_info(dev_name, &hw_ver, NULL);
 	if (ret)
 		return 1;
 
@@ -1044,20 +1109,20 @@ static int plt_autocalibrate(struct nl80211_state *state, struct nl_cb *cb,
 		goto out_removenvs;
 	}
 
-	fems_parsed = cmn.fem0_bands + cmn.fem1_bands;
+	fems_parsed = cmn.fem0_bands + cmn.fem1_bands + cmn.fem2_bands + cmn.fem3_bands;
 
 	/* Get nr bands from parsed ini */
 	single_dual = ini_get_dual_mode(&cmn);
 
 	if (single_dual == 0) {
-		if (fems_parsed < 1 || fems_parsed > 2) {
+		if (fems_parsed < 1 || fems_parsed > 4) {
 			fprintf(stderr, "Incorrect number of FEM sections %d for single mode\n",
 			        fems_parsed);
 			return 1;
 		}
 	}
 	else if (single_dual == 1) {
-		if (fems_parsed < 2 && fems_parsed > 4) {
+		if (fems_parsed < 2 && fems_parsed > 8) {
 			fprintf(stderr, "Incorrect number of FEM sections %d for dual mode\n",
 			        fems_parsed);
 			return 1;
@@ -1070,8 +1135,15 @@ static int plt_autocalibrate(struct nl80211_state *state, struct nl_cb *cb,
 	}
 
 	/* I suppose you can have one FEM with 2.4 only and one in dual band
-	   but it's more likely a mistake */
-	if ((single_dual + 1) * (cmn.auto_fem + 1) != fems_parsed) {
+	   but it's more likely a mistake.
+
+	   In normal situation we have:
+	   ----------------------------
+	   Single Band Manual   - 1 FEM
+	   Dual   Band Manual   - 2 FEMs
+	   Single Band Auto Fem - 4 FEMs
+	   Dual   Band Auto Fem - 8 FEMs */
+	if ((single_dual + 1) * (cmn.auto_fem * 3 + 1) != fems_parsed) {
 		printf("WARNING: %d FEMS for %d bands with autofem %s looks "
 			"like a strange configuration\n",
 			fems_parsed, single_dual + 1,
@@ -1124,6 +1196,12 @@ static int plt_autocalibrate(struct nl80211_state *state, struct nl_cb *cb,
 	}
 	if (cmn.fem1_bands) {
 		printf("FEM1 has %d bands. ", cmn.fem1_bands);
+	}
+	if (cmn.fem2_bands) {
+		printf("FEM2 has %d bands. ", cmn.fem2_bands);
+	}
+	if (cmn.fem3_bands) {
+		printf("FEM3 has %d bands. ", cmn.fem3_bands);
 	}
 
 	printf("AutoFEM is %s. ", cmn.auto_fem ? "on" : "off");

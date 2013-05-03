@@ -1,4 +1,8 @@
-LOCAL_PATH:= $(call my-dir)
+LOCAL_DIR:= $(call my-dir)
+LOCAL_PATH:= $(LOCAL_DIR)
+
+include $(LOCAL_PATH)/wlconf/Android.mk
+LOCAL_PATH=$(LOCAL_DIR)
 
 #
 # Calibrator
@@ -10,6 +14,7 @@ LOCAL_SRC_FILES := \
         misc_cmds.c \
         calibrator.c \
         plt.c \
+	wl18xx_plt.c \
         ini.c
 
 LOCAL_CFLAGS := -DCONFIG_LIBNL20
@@ -49,12 +54,10 @@ LOCAL_MODULE := wl_logproxy
 
 include $(BUILD_EXECUTABLE)
 
-
-
-
-
 include $(LOCAL_PATH)/hw/Android.mk
+LOCAL_PATH=$(LOCAL_DIR)
 
+include $(LOCAL_PATH)/asi/Android.mk
 #
 # UIM Application
 #

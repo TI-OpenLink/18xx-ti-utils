@@ -603,6 +603,230 @@ static int parse_fem1_band2_prms_128x(char *l, struct wl12xx_ini *p)
 	return 1;
 }
 
+static int parse_fem2_band2_prms(char *l, struct wl12xx_ini *p)
+{
+	char *name, *val;
+	struct wl1271_ini_fem_params_2 *gp =
+		&(p->ini1271.dyn_radio_params_2[2].params);
+
+	if (split_line(l, &name, &val))
+		return 1;
+
+	COMPARE_N_ADD2("FEM2_TXBiPReferencePDvoltage_2_4G", l, val,
+		&gp->tx_bip_ref_pd_voltage);
+
+	COMPARE_N_ADD("FEM2_TxBiPReferencePower_2_4G", l, val,
+		&gp->tx_bip_ref_power);
+
+	COMPARE_N_ADD("FEM2_TxBiPOffsetdB_2_4G", l, val,
+		&gp->tx_bip_ref_offset);
+
+	COMPARE_N_ADD("FEM2_TxPerRatePowerLimits_2_4G_Normal", l, val,
+		&gp->tx_per_rate_pwr_limits_normal);
+
+	COMPARE_N_ADD("FEM2_TxPerRatePowerLimits_2_4G_Degraded", l, val,
+		&gp->tx_per_rate_pwr_limits_degraded);
+
+	COMPARE_N_ADD("FEM2_TxPerRatePowerLimits_2_4G_Extreme", l, val,
+		&gp->tx_per_rate_pwr_limits_extreme);
+
+	COMPARE_N_ADD("FEM2_DegradedLowToNormalThr_2_4G", l, val,
+		&gp->degraded_low_to_normal_thr);
+
+	COMPARE_N_ADD("FEM2_NormalToDegradedHighThr_2_4G", l, val,
+		&gp->normal_to_degraded_high_thr);
+
+	COMPARE_N_ADD("FEM2_TxPerChannelPowerLimits_2_4G_11b", l, val,
+		&gp->tx_per_chan_pwr_limits_11b);
+
+	COMPARE_N_ADD("FEM2_TxPerChannelPowerLimits_2_4G_OFDM", l, val,
+		&gp->tx_per_chan_pwr_limits_ofdm);
+
+	COMPARE_N_ADD("FEM2_TxPDVsRateOffsets_2_4G", l, val,
+		&gp->tx_pd_vs_rate_offsets);
+
+	COMPARE_N_ADD("FEM2_TxIbiasTable_2_4G", l, val,
+		&gp->tx_ibias);
+
+	COMPARE_N_ADD("FEM2_RxFemInsertionLoss_2_4G", l, val,
+		&gp->rx_fem_insertion_loss);
+
+	fprintf(stderr, "Unable to parse: (%s)\n", l);
+
+	return 1;
+}
+
+static int parse_fem2_band2_prms_128x(char *l, struct wl12xx_ini *p)
+{
+	char *name, *val;
+	struct wl128x_ini_fem_params_2 *gp =
+		&(p->ini128x.dyn_radio_params_2[2].params);
+
+	if (split_line(l, &name, &val))
+		return 1;
+
+	COMPARE_N_ADD2("FEM2_TxBiPReferencePDvoltage_2_4G", l, val,
+		&gp->tx_bip_ref_pd_voltage);
+
+	COMPARE_N_ADD("FEM2_TxBiPReferencePower_2_4G", l, val,
+		&gp->tx_bip_ref_power);
+
+	COMPARE_N_ADD("FEM2_TxBiPOffsetdB_2_4G", l, val,
+		&gp->tx_bip_ref_offset);
+
+	COMPARE_N_ADD("FEM2_TxPerRatePowerLimits_2_4G_Normal", l, val,
+		&gp->tx_per_rate_pwr_limits_normal);
+
+	COMPARE_N_ADD("FEM2_TxPerRatePowerLimits_2_4G_Degraded", l, val,
+		&gp->tx_per_rate_pwr_limits_degraded);
+
+	COMPARE_N_ADD("FEM2_TxPerRatePowerLimits_2_4G_Extreme", l, val,
+		&gp->tx_per_rate_pwr_limits_extreme);
+
+	COMPARE_N_ADD("FEM2_DegradedLowToNormalThr_2_4G", l, val,
+		&gp->degraded_low_to_normal_thr);
+
+	COMPARE_N_ADD("FEM2_NormalToDegradedHighThr_2_4G", l, val,
+		&gp->normal_to_degraded_high_thr);
+
+	COMPARE_N_ADD("FEM2_TxPerChannelPowerLimits_2_4G_11b", l, val,
+		&gp->tx_per_chan_pwr_limits_11b);
+
+	COMPARE_N_ADD("FEM2_TxPerChannelPowerLimits_2_4G_OFDM", l, val,
+		&gp->tx_per_chan_pwr_limits_ofdm);
+
+	COMPARE_N_ADD("FEM2_TxPDVsRateOffsets_2_4G", l, val,
+		&gp->tx_pd_vs_rate_offsets);
+
+	COMPARE_N_ADD("FEM2_TxPDVsChannelOffsets_2_4G", l, val,
+		&gp->tx_pd_vs_chan_offsets);
+
+	COMPARE_N_ADD("FEM2_TxPDVsTemperature_2_4G", l, val,
+		&gp->tx_pd_vs_temperature);
+
+	COMPARE_N_ADD("FEM2_TxIbiasTable_2_4G", l, val,
+		&gp->tx_ibias);
+
+	COMPARE_N_ADD("FEM2_RxFemInsertionLoss_2_4G", l, val,
+		&gp->rx_fem_insertion_loss);
+
+	fprintf(stderr, "Unable to parse: (%s)\n", l);
+
+	return 1;
+}
+
+static int parse_fem3_band2_prms(char *l, struct wl12xx_ini *p)
+{
+	char *name, *val;
+	struct wl1271_ini_fem_params_2 *gp =
+		&(p->ini1271.dyn_radio_params_2[3].params);
+
+	if (split_line(l, &name, &val))
+		return 1;
+
+	COMPARE_N_ADD2("FEM3_TXBiPReferencePDvoltage_2_4G", l, val,
+		&gp->tx_bip_ref_pd_voltage);
+
+	COMPARE_N_ADD("FEM3_TxBiPReferencePower_2_4G", l, val,
+		&gp->tx_bip_ref_power);
+
+	COMPARE_N_ADD("FEM3_TxBiPOffsetdB_2_4G", l, val,
+		&gp->tx_bip_ref_offset);
+
+	COMPARE_N_ADD("FEM3_TxPerRatePowerLimits_2_4G_Normal", l, val,
+		&gp->tx_per_rate_pwr_limits_normal);
+
+	COMPARE_N_ADD("FEM3_TxPerRatePowerLimits_2_4G_Degraded", l, val,
+		&gp->tx_per_rate_pwr_limits_degraded);
+
+	COMPARE_N_ADD("FEM3_TxPerRatePowerLimits_2_4G_Extreme", l, val,
+		&gp->tx_per_rate_pwr_limits_extreme);
+
+	COMPARE_N_ADD("FEM3_DegradedLowToNormalThr_2_4G", l, val,
+		&gp->degraded_low_to_normal_thr);
+
+	COMPARE_N_ADD("FEM3_NormalToDegradedHighThr_2_4G", l, val,
+		&gp->normal_to_degraded_high_thr);
+
+	COMPARE_N_ADD("FEM3_TxPerChannelPowerLimits_2_4G_11b", l, val,
+		&gp->tx_per_chan_pwr_limits_11b);
+
+	COMPARE_N_ADD("FEM3_TxPerChannelPowerLimits_2_4G_OFDM", l, val,
+		&gp->tx_per_chan_pwr_limits_ofdm);
+
+	COMPARE_N_ADD("FEM3_TxPDVsRateOffsets_2_4G", l, val,
+		&gp->tx_pd_vs_rate_offsets);
+
+	COMPARE_N_ADD("FEM3_TxIbiasTable_2_4G", l, val,
+		&gp->tx_ibias);
+
+	COMPARE_N_ADD("FEM3_RxFemInsertionLoss_2_4G", l, val,
+		&gp->rx_fem_insertion_loss);
+
+	fprintf(stderr, "Unable to parse: (%s)\n", l);
+
+	return 1;
+}
+
+static int parse_fem3_band2_prms_128x(char *l, struct wl12xx_ini *p)
+{
+	char *name, *val;
+	struct wl128x_ini_fem_params_2 *gp =
+		&(p->ini128x.dyn_radio_params_2[3].params);
+
+	if (split_line(l, &name, &val))
+		return 1;
+
+	COMPARE_N_ADD2("FEM3_TxBiPReferencePDvoltage_2_4G", l, val,
+		&gp->tx_bip_ref_pd_voltage);
+
+	COMPARE_N_ADD("FEM3_TxBiPReferencePower_2_4G", l, val,
+		&gp->tx_bip_ref_power);
+
+	COMPARE_N_ADD("FEM3_TxBiPOffsetdB_2_4G", l, val,
+		&gp->tx_bip_ref_offset);
+
+	COMPARE_N_ADD("FEM3_TxPerRatePowerLimits_2_4G_Normal", l, val,
+		&gp->tx_per_rate_pwr_limits_normal);
+
+	COMPARE_N_ADD("FEM3_TxPerRatePowerLimits_2_4G_Degraded", l, val,
+		&gp->tx_per_rate_pwr_limits_degraded);
+
+	COMPARE_N_ADD("FEM3_TxPerRatePowerLimits_2_4G_Extreme", l, val,
+		&gp->tx_per_rate_pwr_limits_extreme);
+
+	COMPARE_N_ADD("FEM3_DegradedLowToNormalThr_2_4G", l, val,
+		&gp->degraded_low_to_normal_thr);
+
+	COMPARE_N_ADD("FEM3_NormalToDegradedHighThr_2_4G", l, val,
+		&gp->normal_to_degraded_high_thr);
+
+	COMPARE_N_ADD("FEM3_TxPerChannelPowerLimits_2_4G_11b", l, val,
+		&gp->tx_per_chan_pwr_limits_11b);
+
+	COMPARE_N_ADD("FEM3_TxPerChannelPowerLimits_2_4G_OFDM", l, val,
+		&gp->tx_per_chan_pwr_limits_ofdm);
+
+	COMPARE_N_ADD("FEM3_TxPDVsRateOffsets_2_4G", l, val,
+		&gp->tx_pd_vs_rate_offsets);
+
+	COMPARE_N_ADD("FEM3_TxPDVsChannelOffsets_2_4G", l, val,
+		&gp->tx_pd_vs_chan_offsets);
+
+	COMPARE_N_ADD("FEM3_TxPDVsTemperature_2_4G", l, val,
+		&gp->tx_pd_vs_temperature);
+
+	COMPARE_N_ADD("FEM3_TxIbiasTable_2_4G", l, val,
+		&gp->tx_ibias);
+
+	COMPARE_N_ADD("FEM3_RxFemInsertionLoss_2_4G", l, val,
+		&gp->rx_fem_insertion_loss);
+
+	fprintf(stderr, "Unable to parse: (%s)\n", l);
+
+	return 1;
+}
+
 static int parse_fem0_band5_prms(char *l, struct wl12xx_ini *p)
 {
 	char *name, *val;
@@ -641,6 +865,62 @@ static int parse_fem0_band5_prms(char *l, struct wl12xx_ini *p)
 
 	COMPARE_N_ADD("FEM0_TxPDVsRateOffsets_5G", l, val,
 		&gp->tx_pd_vs_rate_offsets);
+
+	COMPARE_N_ADD("FEM0_TxIbiasTable_5G", l, val,
+		&gp->tx_ibias);
+
+	COMPARE_N_ADD("FEM0_RxFemInsertionLoss_5G", l, val,
+		&gp->rx_fem_insertion_loss);
+
+	fprintf(stderr, "Unable to parse: (%s)\n", l);
+
+	return 1;
+}
+
+static int parse_fem0_band5_prms_128x(char *l, struct wl12xx_ini *p)
+{
+	char *name, *val;
+	struct wl128x_ini_fem_params_5 *gp =
+		&(p->ini128x.dyn_radio_params_5[0].params);
+
+	if (split_line(l, &name, &val))
+		return 1;
+
+	COMPARE_N_ADD2("FEM0_TxBiPReferencePDvoltage_5G", l, val,
+		&gp->tx_bip_ref_pd_voltage);
+
+	COMPARE_N_ADD("FEM0_TxBiPReferencePower_5G", l, val,
+		&gp->tx_bip_ref_power);
+
+	COMPARE_N_ADD("FEM0_TxBiPOffsetdB_5G", l, val,
+		&gp->tx_bip_ref_offset);
+
+	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_5G_Normal", l, val,
+		&gp->tx_per_rate_pwr_limits_normal);
+
+	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_5G_Degraded", l, val,
+		&gp->tx_per_rate_pwr_limits_degraded);
+
+	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_5G_Extreme", l, val,
+		&gp->tx_per_rate_pwr_limits_extreme);
+
+	COMPARE_N_ADD("FEM0_DegradedLowToNormalThr_5G", l, val,
+		&gp->degraded_low_to_normal_thr);
+
+	COMPARE_N_ADD("FEM0_NormalToDegradedHighThr_5G", l, val,
+		&gp->normal_to_degraded_high_thr);
+
+	COMPARE_N_ADD("FEM0_TxPerChannelPowerLimits_5G_OFDM", l, val,
+		&gp->tx_per_chan_pwr_limits_ofdm);
+
+	COMPARE_N_ADD("FEM0_TxPDVsRateOffsets_5G", l, val,
+		&gp->tx_pd_vs_rate_offsets);
+
+	COMPARE_N_ADD("FEM0_TxPDVsChannelOffsets_5G", l, val,
+		&gp->tx_pd_vs_chan_offsets);
+
+	COMPARE_N_ADD("FEM0_TxPDVsTemperature_5G", l, val,
+		&gp->tx_pd_vs_temperature);
 
 	COMPARE_N_ADD("FEM0_TxIbiasTable_5G", l, val,
 		&gp->tx_ibias);
@@ -759,55 +1039,211 @@ static int parse_fem1_band5_prms_128x(char *l, struct wl12xx_ini *p)
 	return 1;
 }
 
-static int parse_fem0_band5_prms_128x(char *l, struct wl12xx_ini *p)
+static int parse_fem2_band5_prms(char *l, struct wl12xx_ini *p)
 {
 	char *name, *val;
-	struct wl128x_ini_fem_params_5 *gp =
-		&(p->ini128x.dyn_radio_params_5[0].params);
+	struct wl1271_ini_fem_params_5 *gp =
+		&(p->ini1271.dyn_radio_params_5[2].params);
 
 	if (split_line(l, &name, &val))
 		return 1;
 
-	COMPARE_N_ADD2("FEM0_TxBiPReferencePDvoltage_5G", l, val,
+	COMPARE_N_ADD2("FEM2_TXBiPReferencePDvoltage_5G", l, val,
 		&gp->tx_bip_ref_pd_voltage);
 
-	COMPARE_N_ADD("FEM0_TxBiPReferencePower_5G", l, val,
+	COMPARE_N_ADD("FEM2_TxBiPReferencePower_5G", l, val,
 		&gp->tx_bip_ref_power);
 
-	COMPARE_N_ADD("FEM0_TxBiPOffsetdB_5G", l, val,
+	COMPARE_N_ADD("FEM2_TxBiPOffsetdB_5G", l, val,
 		&gp->tx_bip_ref_offset);
 
-	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_5G_Normal", l, val,
+	COMPARE_N_ADD("FEM2_TxPerRatePowerLimits_5G_Normal", l, val,
 		&gp->tx_per_rate_pwr_limits_normal);
 
-	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_5G_Degraded", l, val,
+	COMPARE_N_ADD("FEM2_TxPerRatePowerLimits_5G_Degraded", l, val,
 		&gp->tx_per_rate_pwr_limits_degraded);
 
-	COMPARE_N_ADD("FEM0_TxPerRatePowerLimits_5G_Extreme", l, val,
+	COMPARE_N_ADD("FEM2_TxPerRatePowerLimits_5G_Extreme", l, val,
 		&gp->tx_per_rate_pwr_limits_extreme);
 
-	COMPARE_N_ADD("FEM0_DegradedLowToNormalThr_5G", l, val,
+	COMPARE_N_ADD("FEM2_DegradedLowToNormalThr_5G", l, val,
 		&gp->degraded_low_to_normal_thr);
 
-	COMPARE_N_ADD("FEM0_NormalToDegradedHighThr_5G", l, val,
+	COMPARE_N_ADD("FEM2_NormalToDegradedHighThr_5G", l, val,
 		&gp->normal_to_degraded_high_thr);
 
-	COMPARE_N_ADD("FEM0_TxPerChannelPowerLimits_5G_OFDM", l, val,
+	COMPARE_N_ADD("FEM2_TxPerChannelPowerLimits_5G_OFDM", l, val,
 		&gp->tx_per_chan_pwr_limits_ofdm);
 
-	COMPARE_N_ADD("FEM0_TxPDVsRateOffsets_5G", l, val,
+	COMPARE_N_ADD("FEM2_TxPDVsRateOffsets_5G", l, val,
 		&gp->tx_pd_vs_rate_offsets);
 
-	COMPARE_N_ADD("FEM0_TxPDVsChannelOffsets_5G", l, val,
-		&gp->tx_pd_vs_chan_offsets);
-
-	COMPARE_N_ADD("FEM0_TxPDVsTemperature_5G", l, val,
-		&gp->tx_pd_vs_temperature);
-
-	COMPARE_N_ADD("FEM0_TxIbiasTable_5G", l, val,
+	COMPARE_N_ADD("FEM2_TxIbiasTable_5G", l, val,
 		&gp->tx_ibias);
 
-	COMPARE_N_ADD("FEM0_RxFemInsertionLoss_5G", l, val,
+	COMPARE_N_ADD("FEM2_RxFemInsertionLoss_5G", l, val,
+		&gp->rx_fem_insertion_loss);
+
+	fprintf(stderr, "Unable to parse: (%s)\n", l);
+
+	return 1;
+}
+
+static int parse_fem2_band5_prms_128x(char *l, struct wl12xx_ini *p)
+{
+	char *name, *val;
+	struct wl128x_ini_fem_params_5 *gp =
+		&(p->ini128x.dyn_radio_params_5[2].params);
+
+	if (split_line(l, &name, &val))
+		return 1;
+
+	COMPARE_N_ADD2("FEM2_TxBiPReferencePDvoltage_5G", l, val,
+		&gp->tx_bip_ref_pd_voltage);
+
+	COMPARE_N_ADD("FEM2_TxBiPReferencePower_5G", l, val,
+		&gp->tx_bip_ref_power);
+
+	COMPARE_N_ADD("FEM2_TxBiPOffsetdB_5G", l, val,
+		&gp->tx_bip_ref_offset);
+
+	COMPARE_N_ADD("FEM2_TxPerRatePowerLimits_5G_Normal", l, val,
+		&gp->tx_per_rate_pwr_limits_normal);
+
+	COMPARE_N_ADD("FEM2_TxPerRatePowerLimits_5G_Degraded", l, val,
+		&gp->tx_per_rate_pwr_limits_degraded);
+
+	COMPARE_N_ADD("FEM2_TxPerRatePowerLimits_5G_Extreme", l, val,
+		&gp->tx_per_rate_pwr_limits_extreme);
+
+	COMPARE_N_ADD("FEM2_DegradedLowToNormalThr_5G", l, val,
+		&gp->degraded_low_to_normal_thr);
+
+	COMPARE_N_ADD("FEM2_NormalToDegradedHighThr_5G", l, val,
+		&gp->normal_to_degraded_high_thr);
+
+	COMPARE_N_ADD("FEM2_TxPerChannelPowerLimits_5G_OFDM", l, val,
+		&gp->tx_per_chan_pwr_limits_ofdm);
+
+	COMPARE_N_ADD("FEM2_TxPDVsRateOffsets_5G", l, val,
+		&gp->tx_pd_vs_rate_offsets);
+
+	COMPARE_N_ADD("FEM2_TxPDVsChannelOffsets_5G", l, val,
+		&gp->tx_pd_vs_chan_offsets);
+
+	COMPARE_N_ADD("FEM2_TxPDVsTemperature_5G", l, val,
+		&gp->tx_pd_vs_temperature);
+
+	COMPARE_N_ADD("FEM2_TxIbiasTable_5G", l, val,
+		&gp->tx_ibias);
+
+	COMPARE_N_ADD("FEM2_RxFemInsertionLoss_5G", l, val,
+		&gp->rx_fem_insertion_loss);
+
+	fprintf(stderr, "Unable to parse: (%s)\n", l);
+
+	return 1;
+}
+
+static int parse_fem3_band5_prms(char *l, struct wl12xx_ini *p)
+{
+	char *name, *val;
+	struct wl1271_ini_fem_params_5 *gp =
+		&(p->ini1271.dyn_radio_params_5[3].params);
+
+	if (split_line(l, &name, &val))
+		return 1;
+
+	COMPARE_N_ADD2("FEM3_TXBiPReferencePDvoltage_5G", l, val,
+		&gp->tx_bip_ref_pd_voltage);
+
+	COMPARE_N_ADD("FEM3_TxBiPReferencePower_5G", l, val,
+		&gp->tx_bip_ref_power);
+
+	COMPARE_N_ADD("FEM3_TxBiPOffsetdB_5G", l, val,
+		&gp->tx_bip_ref_offset);
+
+	COMPARE_N_ADD("FEM3_TxPerRatePowerLimits_5G_Normal", l, val,
+		&gp->tx_per_rate_pwr_limits_normal);
+
+	COMPARE_N_ADD("FEM3_TxPerRatePowerLimits_5G_Degraded", l, val,
+		&gp->tx_per_rate_pwr_limits_degraded);
+
+	COMPARE_N_ADD("FEM3_TxPerRatePowerLimits_5G_Extreme", l, val,
+		&gp->tx_per_rate_pwr_limits_extreme);
+
+	COMPARE_N_ADD("FEM3_DegradedLowToNormalThr_5G", l, val,
+		&gp->degraded_low_to_normal_thr);
+
+	COMPARE_N_ADD("FEM3_NormalToDegradedHighThr_5G", l, val,
+		&gp->normal_to_degraded_high_thr);
+
+	COMPARE_N_ADD("FEM3_TxPerChannelPowerLimits_5G_OFDM", l, val,
+		&gp->tx_per_chan_pwr_limits_ofdm);
+
+	COMPARE_N_ADD("FEM3_TxPDVsRateOffsets_5G", l, val,
+		&gp->tx_pd_vs_rate_offsets);
+
+	COMPARE_N_ADD("FEM3_TxIbiasTable_5G", l, val,
+		&gp->tx_ibias);
+
+	COMPARE_N_ADD("FEM3_RxFemInsertionLoss_5G", l, val,
+		&gp->rx_fem_insertion_loss);
+
+	fprintf(stderr, "Unable to parse: (%s)\n", l);
+
+	return 1;
+}
+
+static int parse_fem3_band5_prms_128x(char *l, struct wl12xx_ini *p)
+{
+	char *name, *val;
+	struct wl128x_ini_fem_params_5 *gp =
+		&(p->ini128x.dyn_radio_params_5[3].params);
+
+	if (split_line(l, &name, &val))
+		return 1;
+
+	COMPARE_N_ADD2("FEM3_TxBiPReferencePDvoltage_5G", l, val,
+		&gp->tx_bip_ref_pd_voltage);
+
+	COMPARE_N_ADD("FEM3_TxBiPReferencePower_5G", l, val,
+		&gp->tx_bip_ref_power);
+
+	COMPARE_N_ADD("FEM3_TxBiPOffsetdB_5G", l, val,
+		&gp->tx_bip_ref_offset);
+
+	COMPARE_N_ADD("FEM3_TxPerRatePowerLimits_5G_Normal", l, val,
+		&gp->tx_per_rate_pwr_limits_normal);
+
+	COMPARE_N_ADD("FEM3_TxPerRatePowerLimits_5G_Degraded", l, val,
+		&gp->tx_per_rate_pwr_limits_degraded);
+
+	COMPARE_N_ADD("FEM3_TxPerRatePowerLimits_5G_Extreme", l, val,
+		&gp->tx_per_rate_pwr_limits_extreme);
+
+	COMPARE_N_ADD("FEM3_DegradedLowToNormalThr_5G", l, val,
+		&gp->degraded_low_to_normal_thr);
+
+	COMPARE_N_ADD("FEM3_NormalToDegradedHighThr_5G", l, val,
+		&gp->normal_to_degraded_high_thr);
+
+	COMPARE_N_ADD("FEM3_TxPerChannelPowerLimits_5G_OFDM", l, val,
+		&gp->tx_per_chan_pwr_limits_ofdm);
+
+	COMPARE_N_ADD("FEM3_TxPDVsRateOffsets_5G", l, val,
+		&gp->tx_pd_vs_rate_offsets);
+
+	COMPARE_N_ADD("FEM3_TxPDVsChannelOffsets_5G", l, val,
+		&gp->tx_pd_vs_chan_offsets);
+
+	COMPARE_N_ADD("FEM3_TxPDVsTemperature_5G", l, val,
+		&gp->tx_pd_vs_temperature);
+
+	COMPARE_N_ADD("FEM3_TxIbiasTable_5G", l, val,
+		&gp->tx_ibias);
+
+	COMPARE_N_ADD("FEM3_RxFemInsertionLoss_5G", l, val,
 		&gp->rx_fem_insertion_loss);
 
 	fprintf(stderr, "Unable to parse: (%s)\n", l);
@@ -872,7 +1308,7 @@ static int find_section(const char *l, enum wl1271_ini_section *st, int *cntr,
 	}
 
 	if (strncmp("FEM0_TXBiPReferencePDvoltage_2_4G", l, 33) == 0 ||
-		strncmp("FEM0_TxBiPReferencePDvoltage_2_4G", l, 33) == 0) {
+	    strncmp("FEM0_TxBiPReferencePDvoltage_2_4G", l, 33) == 0) {
 		*st = FEM0_BAND2_PRMS;
 		cmn->fem0_bands++;
 		if (arch == WL128X_ARCH)
@@ -884,7 +1320,7 @@ static int find_section(const char *l, enum wl1271_ini_section *st, int *cntr,
 	}
 
 	if (strncmp("FEM1_TXBiPReferencePDvoltage_2_4G", l, 33) == 0 ||
-		strncmp("FEM1_TxBiPReferencePDvoltage_2_4G", l, 33) == 0) {
+	    strncmp("FEM1_TxBiPReferencePDvoltage_2_4G", l, 33) == 0) {
 		*st = FEM1_BAND2_PRMS;
 		cmn->fem1_bands++;
 		if (arch == WL128X_ARCH)
@@ -895,8 +1331,44 @@ static int find_section(const char *l, enum wl1271_ini_section *st, int *cntr,
 		return 0;
 	}
 
+	if (strncmp("FEM2_TXBiPReferencePDvoltage_2_4G", l, 33) == 0 ||
+	    strncmp("FEM2_TxBiPReferencePDvoltage_2_4G", l, 33) == 0) {
+		*st = FEM2_BAND2_PRMS;
+		cmn->fem2_bands++;
+		if (arch == WL128X_ARCH)
+			*cntr = 15;
+		else
+			*cntr = 13;
+
+		return 0;
+	}
+
+	if (strncmp("FEM3_TXBiPReferencePDvoltage_2_4G", l, 33) == 0 ||
+	    strncmp("FEM3_TxBiPReferencePDvoltage_2_4G", l, 33) == 0) {
+		*st = FEM3_BAND2_PRMS;
+		cmn->fem3_bands++;
+		if (arch == WL128X_ARCH)
+			*cntr = 15;
+		else
+			*cntr = 13;
+
+		return 0;
+	}
+
+	if (strncmp("FEM0_TXBiPReferencePDvoltage_5G", l, 31) == 0 ||
+	    strncmp("FEM0_TxBiPReferencePDvoltage_5G", l, 31) == 0) {
+		*st = FEM0_BAND5_PRMS;
+		cmn->fem0_bands++;
+		if (arch == WL128X_ARCH)
+			*cntr = 14;
+		else
+			*cntr = 12;
+
+		return 0;
+	}
+
 	if (strncmp("FEM1_TXBiPReferencePDvoltage_5G", l, 31) == 0 ||
-		strncmp("FEM1_TxBiPReferencePDvoltage_5G", l, 31) == 0) {
+	    strncmp("FEM1_TxBiPReferencePDvoltage_5G", l, 31) == 0) {
 		*st = FEM1_BAND5_PRMS;
 		cmn->fem1_bands++;
 		if (arch == WL128X_ARCH)
@@ -907,10 +1379,22 @@ static int find_section(const char *l, enum wl1271_ini_section *st, int *cntr,
 		return 0;
 	}
 
-	if (strncmp("FEM0_TXBiPReferencePDvoltage_5G", l, 31) == 0 ||
-		strncmp("FEM0_TxBiPReferencePDvoltage_5G", l, 31) == 0) {
-		*st = FEM0_BAND5_PRMS;
-		cmn->fem0_bands++;
+	if (strncmp("FEM2_TXBiPReferencePDvoltage_5G", l, 31) == 0 ||
+	    strncmp("FEM2_TxBiPReferencePDvoltage_5G", l, 31) == 0) {
+		*st = FEM2_BAND5_PRMS;
+		cmn->fem2_bands++;
+		if (arch == WL128X_ARCH)
+			*cntr = 14;
+		else
+			*cntr = 12;
+
+		return 0;
+	}
+
+	if (strncmp("FEM3_TXBiPReferencePDvoltage_5G", l, 31) == 0 ||
+	    strncmp("FEM3_TxBiPReferencePDvoltage_5G", l, 31) == 0) {
+		*st = FEM3_BAND5_PRMS;
+		cmn->fem3_bands++;
 		if (arch == WL128X_ARCH)
 			*cntr = 14;
 		else
@@ -922,10 +1406,87 @@ static int find_section(const char *l, enum wl1271_ini_section *st, int *cntr,
 	return 1;
 }
 
+static const char* ini_section_str(enum wl1271_ini_section section)
+{
+	const char *section_str;
+
+	switch(section) {
+
+	case GENERAL_PRMS:
+		section_str = "GENERAL_PARAMS";
+		break;
+
+	case FEM_PRMS:
+		section_str = "FEM_PARAMS";
+		break;
+
+	case BAND2_PRMS:
+		section_str = "BAND2_PARAMS";
+		break;
+
+	case BAND5_PRMS:
+		section_str = "BAND5_PARAMS";
+		break;
+
+	case FEM0_BAND2_PRMS:
+		section_str = "FEM0_BAND2_PARAMS";
+		break;
+
+	case FEM1_BAND2_PRMS:
+		section_str = "FEM1_BAND2_PARAMS";
+		break;
+
+	case FEM2_BAND2_PRMS:
+		section_str = "FEM2_BAND2_PARAMS";
+		break;
+
+	case FEM3_BAND2_PRMS:
+		section_str = "FEM3_BAND2_PARAMS";
+		break;
+
+	case FEM0_BAND5_PRMS:
+		section_str = "FEM0_BAND5_PARAMS";
+		break;
+
+	case FEM1_BAND5_PRMS:
+		section_str = "FEM1_BAND5_PARAMS";
+		break;
+
+	case FEM2_BAND5_PRMS:
+		section_str = "FEM2_BAND5_PARAMS";
+		break;
+
+	case FEM3_BAND5_PRMS:
+		section_str = "FEM3_BAND5_PARAMS";
+		break;
+
+	case UKNOWN_SECTION:
+	default:
+		section_str = "UNKNOWN_SECTION";
+		break;
+	}
+
+	return section_str;
+}
+
 static int ini_parse_line(char *l, struct wl12xx_common *cmn)
 {
 	static enum wl1271_ini_section status;
 	static int cntr;
+
+	if (cntr) {
+		/*
+		 * Recovery mode -
+		 *  Check if didn't finish current section and we are already in
+		 *  another one. This can happen in case of optional params in section.
+		 */
+		enum wl1271_ini_section curr_section = status;
+		if (!find_section(l, &status, &cntr, cmn)) {
+			printf("Some params missing in ini section %s moving to section %s\n",
+				ini_section_str(curr_section),
+				ini_section_str(status));
+		}
+	}
 
 	if (!cntr && find_section(l, &status, &cntr, cmn)) {
 		fprintf(stderr, "Uknown ini section %s\n", l);
@@ -955,12 +1516,24 @@ static int ini_parse_line(char *l, struct wl12xx_common *cmn)
 	case FEM1_BAND2_PRMS:	/* FEM1 band 2.4GHz parameters */
 		cntr--;
 		return cmn->parse_ops->prs_fem1_band2_prms(l, &cmn->ini);
+	case FEM2_BAND2_PRMS:	/* FEM2 band 2.4GHz parameters */
+		cntr--;
+		return cmn->parse_ops->prs_fem2_band2_prms(l, &cmn->ini);
+	case FEM3_BAND2_PRMS:	/* FEM3 band 2.4GHz parameters */
+		cntr--;
+		return cmn->parse_ops->prs_fem3_band2_prms(l, &cmn->ini);
 	case FEM0_BAND5_PRMS:	/* FEM0 band 5GHz parameters */
 		cntr--;
 		return cmn->parse_ops->prs_fem0_band5_prms(l, &cmn->ini);
 	case FEM1_BAND5_PRMS:	/* FEM1 band 5GHz parameters */
 		cntr--;
 		return cmn->parse_ops->prs_fem1_band5_prms(l, &cmn->ini);
+	case FEM2_BAND5_PRMS:	/* FEM2 band 5GHz parameters */
+		cntr--;
+		return cmn->parse_ops->prs_fem2_band5_prms(l, &cmn->ini);
+	case FEM3_BAND5_PRMS:	/* FEM3 band 5GHz parameters */
+		cntr--;
+		return cmn->parse_ops->prs_fem3_band5_prms(l, &cmn->ini);
 	case UKNOWN_SECTION:
 		/* added because of compilation warning. handeled in find_section() */
 		break;
@@ -1071,8 +1644,12 @@ static struct wl12xx_parse_ops wl1271_parse_ops = {
 	.prs_band5_prms         = parse_band5_prms,
 	.prs_fem0_band2_prms    = parse_fem0_band2_prms,
 	.prs_fem1_band2_prms    = parse_fem1_band2_prms,
+	.prs_fem2_band2_prms    = parse_fem2_band2_prms,
+	.prs_fem3_band2_prms    = parse_fem3_band2_prms,
 	.prs_fem0_band5_prms    = parse_fem0_band5_prms,
 	.prs_fem1_band5_prms    = parse_fem1_band5_prms,
+	.prs_fem2_band5_prms    = parse_fem2_band5_prms,
+	.prs_fem3_band5_prms    = parse_fem3_band5_prms,
 	.is_dual_mode		= is_dual_mode,
 };
 
@@ -1082,8 +1659,12 @@ static struct wl12xx_parse_ops wl128x_parse_ops = {
 	.prs_band5_prms         = parse_band5_prms_128x,
 	.prs_fem0_band2_prms    = parse_fem0_band2_prms_128x,
 	.prs_fem1_band2_prms    = parse_fem1_band2_prms_128x,
+	.prs_fem2_band2_prms    = parse_fem2_band2_prms_128x,
+	.prs_fem3_band2_prms    = parse_fem3_band2_prms_128x,
 	.prs_fem0_band5_prms    = parse_fem0_band5_prms_128x,
 	.prs_fem1_band5_prms    = parse_fem1_band5_prms_128x,
+	.prs_fem2_band5_prms    = parse_fem2_band5_prms_128x,
+	.prs_fem3_band5_prms    = parse_fem3_band5_prms_128x,
 	.is_dual_mode		= is_dual_mode_128x,
 };
 
@@ -1157,6 +1738,8 @@ int read_ini(const char *filename, struct wl12xx_common *cmn)
 	cmn->auto_fem = 0;
 	cmn->fem0_bands = 0;
 	cmn->fem1_bands = 0;
+	cmn->fem2_bands = 0;
+	cmn->fem3_bands = 0;
 
 	f = fopen(filename, "r");
 	if (f == NULL) {
