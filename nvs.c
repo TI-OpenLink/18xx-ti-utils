@@ -65,16 +65,15 @@ char *get_opt_nvsoutfile(int argc, char **argv)
 int nvs_set_mac(char *nvsfile, char *mac)
 {
 	unsigned char mac_buff[12];
-	unsigned char in_mac[6];
+	unsigned int in_mac[6];
 	int fd;
 	unsigned int lower;
 
 	if (mac) {
 		int ret =
 		sscanf(mac, "%2x:%2x:%2x:%2x:%2x:%2x",
-		(unsigned int *)&in_mac[0], (unsigned int *)&in_mac[1],
-		(unsigned int *)&in_mac[2], (unsigned int *)&in_mac[3],
-		(unsigned int *)&in_mac[4], (unsigned int *)&in_mac[5]);
+		&in_mac[0], &in_mac[1], &in_mac[2],
+		&in_mac[3], &in_mac[4], &in_mac[5]);
 		if (ret != 6) {
 			fprintf(stderr, "MAC address is not valid: %s\n", mac);
 			return -1;
@@ -92,12 +91,12 @@ int nvs_set_mac(char *nvsfile, char *mac)
 	}
 
 	read(fd, mac_buff, 12);
-	mac_buff[11] = in_mac[0];
-	mac_buff[10] = in_mac[1];
-	mac_buff[6]  = in_mac[2];
-	mac_buff[5]  = in_mac[3];
-	mac_buff[4]  = in_mac[4];
-	mac_buff[3]  = in_mac[5];
+	mac_buff[11] = (unsigned char)in_mac[0];
+	mac_buff[10] = (unsigned char)in_mac[1];
+	mac_buff[6]  = (unsigned char)in_mac[2];
+	mac_buff[5]  = (unsigned char)in_mac[3];
+	mac_buff[4]  = (unsigned char)in_mac[4];
+	mac_buff[3]  = (unsigned char)in_mac[5];
 
 	lseek(fd, 0L, 0);
 
