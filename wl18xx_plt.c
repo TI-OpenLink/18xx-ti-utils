@@ -74,6 +74,40 @@ COMMAND(wl18xx_plt, phy_reg_write , "<addr> <data> ",
 	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_phy_reg_write,
 	" Write PHY register for PLT.\n");
 
+static int __write_phy_register(struct nl80211_state *state, char *addr, char *val)
+{
+	char *prms[5] = { "wlan0", "wl18xx_plt", "phy_reg_write"};
+	prms[3] = addr;
+	prms[4] = val;
+	int rc;
+	rc = handle_cmd(state, II_NETDEV, ARRAY_SIZE(prms), prms);
+	if (rc < 0) {
+		fprintf(stderr, "Fail to write to PHY register (addr=%s, value=%s)\n", addr, val);
+		return 1;
+	}
+	return 0;
+}
+
+static int plt_wl18xx_tx_tone(struct nl80211_state *state, struct nl_cb *cb,
+			      struct nl_msg *msg, int argc, char **argv)
+{
+	char *prms[2] = {"0x2c100", "0x1703"};
+	int rc;
+	rc = __write_phy_register(state, "0x22138", "0x3C0") ;
+	if (rc)
+		return rc;
+	rc = __write_phy_register(state, "0x22034", "0x1");
+	if (rc)
+		return rc;
+
+	printf("Calibrator:: Starting TX Tone...\n");
+	return plt_wl18xx_phy_reg_write(state, cb, msg, ARRAY_SIZE(prms), prms);
+}
+
+COMMAND(wl18xx_plt, tx_tone , "",
+	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_tx_tone,
+	" Set TX Tone\n");
+
 static int plt_wl18xx_display_phy_reg_read(struct nl_msg *msg, void *arg)
 {
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
@@ -296,6 +330,10 @@ static int plt_wl18xx_set_tx_power(struct nl80211_state *state,
 	prms.mac_gain_calc_mode = atoi(argv[9]);
 	prms.mac_analog_gain_control_idx = atoi(argv[10]);
 	prms.mac_post_dpd_gain = atoi(argv[11]);
+	if (prms.mac_des_pwr > 20000) {
+		fprintf(stderr, "TX Output Power is out of range (0-20.000dBm)\n");
+		return 1;
+	}
 
 	if (prms.mac_lvl_idx > 3)
 		return 1;
@@ -345,7 +383,7 @@ nla_put_failure:
 	return 2;
 }
 
-COMMAND(wl18xx_plt, set_tx_power, "<output_power> <level> <band> "
+COMMAND(wl18xx_plt, set_tx_power, "<output_power> <level:0-20.000> <band> "
 		"<primary_channel> <2nd_channel> <antenna> <non_serving_channel> "
 		"<channel_limitation> <frontend_limit> <gain_calculation> "
 		"<analog_gain_control_id> <post_dpd_gain>",
@@ -417,6 +455,7 @@ static int plt_wl18xx_start_rx(struct nl80211_state *state, struct nl_cb *cb,
 	NLA_PUT(msg, WL1271_TM_ATTR_DATA, sizeof(prms), &prms);
 
 	nla_nest_end(msg, key);
+	printf("Calibrator:: Starting RX Simulation (Note that statistics counters are being reset)...\n");
 
 	return 0;
 
@@ -450,6 +489,7 @@ static int plt_wl18xx_stop_rx(struct nl80211_state *state, struct nl_cb *cb,
 	NLA_PUT(msg, WL1271_TM_ATTR_DATA, sizeof(prms), &prms);
 
 	nla_nest_end(msg, key);
+	printf("Calibrator:: Stopping RX Simulation\n");
 
 	return 0;
 
@@ -483,10 +523,16 @@ static int plt_wl18xx_display_rx_stats(struct nl_msg *msg, void *arg)
 	prms = (struct wl18xx_cmd_rx_stats *) nla_data(td[WL1271_TM_ATTR_DATA]);
 
 	printf("\nRX statistics (status %d)\n", prms->radio_status);
-	printf("Total packets:\t%d\n", prms->total);
-	printf("FCS errors:\t%d\n", prms->errors);
-	printf("MAC mismatch:\t%d\n", prms->addr_mm);
-	printf("Good packets:\t%d\n", prms->good);
+	printf("Total Received Packets:\t%d\n", prms->total);
+	printf("FCS Errors:\t\t%d\n", prms->errors);
+	printf("MAC Mismatch:\t\t%d\n", prms->addr_mm);
+	printf("Good Packets:\t\t%d\n", prms->good);
+	if(prms->total) {
+		float per = ((float)prms->total - (float)prms->good)/(float)prms->total;
+		printf("PER:\t\t\t%f     # PER = Total Bad / Total Received\n", per);
+	} else {
+		printf("PER:\t\t\tN/A     # PER = Total Bad / Total Received\n");
+	}
 
 	return NL_SKIP;
 }
@@ -553,6 +599,14 @@ static int plt_wl18xx_start_tx(struct nl80211_state *state, struct nl_cb *cb,
 	str2mac(prms.dst_addr, argv[9]);
 	prms.bandwidth = atoi(argv[10]);
 
+	if (prms.delay < 200) {
+		fprintf(stderr, "Delay is out of range (valid range >=200us)\n");
+		return 1;
+	}
+	if (prms.size > 2000) {
+		fprintf(stderr, "Packet Size is out of range (valid range <2000B)\n");
+		return 1;
+	}
 	if (prms.rate < 0 || prms.rate > 29)
 		return 1;
 	if (prms.gi != 0 && prms.gi != 1)
@@ -565,6 +619,14 @@ static int plt_wl18xx_start_tx(struct nl80211_state *state, struct nl_cb *cb,
 		fprintf(stderr, "fail to nla_nest_start()\n");
 		return 1;
 	}
+	printf("Calibrator:: Starting TX Simulation (delay=%d, rate=%d, size=%d, mode=%d\n"
+		   "                                     data_type=%d, BW=%d, gi=%d, opt1=0x%x, opt2=0x%x\n"
+		   "                                     src=%02x:%02x:%02x:%02x:%02x:%02x\n"
+		   "                                     dst=%02x:%02x:%02x:%02x:%02x:%02x)...\n",
+	       prms.delay, prms.rate, prms.size, prms.mode, prms.data_type,
+	       prms.bandwidth, prms.gi, prms.options1,prms.options2,
+	       prms.src_addr[0],prms.src_addr[1],prms.src_addr[2],prms.src_addr[3],prms.src_addr[4],prms.src_addr[5],
+	       prms.dst_addr[0],prms.dst_addr[1],prms.dst_addr[2],prms.dst_addr[3],prms.dst_addr[4],prms.dst_addr[5]);
 
 	NLA_PUT_U32(msg, WL1271_TM_ATTR_CMD_ID, WL1271_TM_CMD_TEST);
 	NLA_PUT(msg, WL1271_TM_ATTR_DATA, sizeof(prms), &prms);
@@ -579,10 +641,10 @@ nla_put_failure:
 }
 
 COMMAND(wl18xx_plt, start_tx, "<delay> <rate> <size> <mode> <data_type> <gi> "
-	"<options1> <options2> <source MAC> <dest MAC> <20|40>",
+	"<options1> <options2> <source MAC> <dest MAC> <channel-width>",
 	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_start_tx,
 	"Start TX transmissions for PLT.\n\n"
-	"<delay>\t\tdelay between packets in us\n"
+	"<delay>\t\tdelay between packets in us: 200-...\n"
 	"<rate>\t\ttransmission rate:\n"
 	"\t\t\t0  =  1.0 Mbps\t\t\t1  =  2.0 Mbps\n"
 	"\t\t\t2  =  5.0 Mbps\t\t\t3  = 11.0 Mbps\n"
@@ -594,12 +656,11 @@ COMMAND(wl18xx_plt, start_tx, "<delay> <rate> <size> <mode> <data_type> <gi> "
 	"\t\t\t14 = 19.5 Mbps (MCS2)\t\t15 = 26.0 Mbps (MCS3)\n"
 	"\t\t\t16 = 39.0 Mbps (MCS4)\t\t17 = 52.0 Mbps (MCS5)\n"
 	"\t\t\t18 = 58.5 Mbps (MCS6)\t\t19 = 65.0 Mbps (MCS7)\n"
-	"\t\t\t20 = 65.0 Mbps + 10% (MCS7 SGI)\t21 = MCS8/MCS4  at 40MHz\n"
-	"\t\t\t22 = MCS9/MCS5  at 40MHz\t23 = MCS10/MCS6 at 40MHz\n"
-	"\t\t\t24 = MCS11/MCS7 at 40MHz\t25 = MCS12/MCS7 at 40MHz SGI\n"
-	"\t\t\t26 = MCS13\t\t\t27 = MCS14\n"
-	"\t\t\t28 = MCS15\t\t\t29 = MCS15 SGI\n"
-	"<size>\t\tpacket size (bytes)\n"
+    "\t\t\t20 = MCS8/MCS4  at 40MHz\t21 = MCS9/MCS5  at 40MHz\n"
+    "\t\t\t22 = MCS10/MCS6 at 40MHz\t23 = MCS11/MCS7 at 40MHz\n"
+    "\t\t\t24 = MCS12/MCS7 at 40MHz SGI\t25 = MCS13\n"
+    "\t\t\t26 = MCS14\t\t\t27 = MCS15\n"
+	"<size>\t\tpacket size (bytes): 0-2000\n"
 	"<mode>\t\tnumber of packets (0 = endless)\n"
 	"<data_type>\tTBD\n"
 	"<gi>\t\tguard interval (0 = normal, 1 = short)\n"
@@ -607,7 +668,7 @@ COMMAND(wl18xx_plt, start_tx, "<delay> <rate> <size> <mode> <data_type> <gi> "
 	"<options2>\tTBD\n"
 	"<source MAC>\tsource MAC address (XX:XX:XX:XX:XX:XX)\n"
 	"<dest MAC>\tdestination MAC address (XX:XX:XX:XX:XX:XX)\n"
-	"<channel width>\tchannel width (0 = 20 MHz, 1 = 40 MHz)");
+	"<channel-width>\tchannel width (0 = 20 MHz, 1 = 40 MHz)");
 
 static int plt_wl18xx_stop_tx(struct nl80211_state *state, struct nl_cb *cb,
 			      struct nl_msg *msg, int argc, char **argv)
