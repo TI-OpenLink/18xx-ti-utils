@@ -1042,10 +1042,12 @@ static void _print_femhexa(char *fem ,char *name, unsigned char *data, int size)
 static void _print_femle16a(char *fem, char *name, __le16 *data, int len)
 {
 	int i;
+	unsigned char *ptr = (unsigned char *)data;
 
 	printf("%s%s = ", fem, name);
 	for (i = 0; i < len; i++) {
-		printf("%04X ", *data++);
+		printf("%02X%02X ", *(ptr+1), *ptr);
+		ptr += 2;
 	}
 	printf("\n");
 }

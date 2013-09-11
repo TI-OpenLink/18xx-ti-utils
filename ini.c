@@ -153,6 +153,7 @@ static int parse_ui_a(char* name, char *val, __le16 *out, size_t exp_size)
 	size_t i = 0;
 	long v;
 	char *endval;
+	unsigned char *ptr = (unsigned char *)out;
 
 	while (*val) {
 		/* Advance to next token */
@@ -173,7 +174,9 @@ static int parse_ui_a(char* name, char *val, __le16 *out, size_t exp_size)
 			fprintf(stderr, "Overflow parsing %s\n", name);
 			return 1;
 		}
-		out[i++] = v;
+		ptr[i*2] = (unsigned char) v;
+		ptr[(i*2)+1] = (unsigned char) (v >> 8);
+		i++;
 
 		val = endval;
 	}
