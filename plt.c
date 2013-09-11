@@ -362,7 +362,6 @@ int is_fw_ver_valid(char *dev_name, struct fw_version *fw_ver_valid)
 {
 	char *str, *tmp_str;
 	struct ethtool_drvinfo drvinfo;
-	char sep = '.';
 	int i=0, ret=0;
 	struct fw_version fw_ver_crnt;
 
