@@ -501,7 +501,8 @@ static int plt_tx_bip(struct nl80211_state *state, struct nl_cb *cb,
 	struct nlattr *key;
 	struct wl1271_cmd_cal_p2g prms;
 	int i;
-	char nvs_path[PATH_MAX];
+	char *nvs_path;
+	static char void_path[] = {'\0'};
 
 	if (argc < 8) {
 		fprintf(stderr, "%s> Missing arguments\n", __func__);
@@ -509,9 +510,9 @@ static int plt_tx_bip(struct nl80211_state *state, struct nl_cb *cb,
 	}
 
 	if (argc > 8)
-		strncpy(nvs_path, argv[8], strlen(argv[8]));
+		nvs_path = argv[8];
 	else
-		nvs_path[0] = '\0';
+		nvs_path = void_path;
 
 	memset(&prms, 0, sizeof(struct wl1271_cmd_cal_p2g));
 
