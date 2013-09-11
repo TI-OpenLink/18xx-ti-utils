@@ -98,7 +98,7 @@ static int set_ref_nvs(struct nl80211_state *state, struct nl_cb *cb,
 		return 1;
 	}
 
-	printf("%04X", cmn.arch);
+	printf("%04X\n", cmn.arch);
 
 	return 0;
 }

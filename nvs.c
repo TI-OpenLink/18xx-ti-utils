@@ -399,7 +399,7 @@ static int read_from_current_nvs(const char *nvs_file,
 
 	ret = read(curr_nvs, buf, size);
 	if (ret < 0) {
-		fprintf(stderr, "Fail to read file %s (%s)", nvs_file,
+		fprintf(stderr, "Fail to read file %s (%s)\n", nvs_file,
 			strerror(errno));
 		close(curr_nvs);
 		return 1;
@@ -1198,13 +1198,13 @@ int info_nvs_file(const char *nvs_file)
 
 	int fd =  open(nvs_file, O_RDONLY, S_IRUSR | S_IWUSR);
 	if (fd < 0) {
-		fprintf(stderr, "Unable to open NVS %s ", nvs_file);
+		fprintf(stderr, "Unable to open NVS %s\n", nvs_file);
 		return 1;
 	}
 
 	ret = read(fd, buf, BUF_SIZE_4_NVS_FILE);
 	if (ret < 0) {
-		fprintf(stderr, "Fail to read file %s (%s)", nvs_file,
+		fprintf(stderr, "Fail to read file %s (%s)\n", nvs_file,
 			strerror(errno));
 		close(fd);
 		return 1;

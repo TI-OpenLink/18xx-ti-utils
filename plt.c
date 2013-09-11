@@ -979,7 +979,7 @@ static int plt_do_calibrate(struct nl80211_state *state, struct nl_cb *cb,
 
 	/* Set nvs version 2.1 */
 	if (arch == UNKNOWN_ARCH) {
-		fprintf(stderr, "Unknown arch. Not setting nvs ver 2.1");
+		fprintf(stderr, "Unknown arch. Not setting nvs ver 2.1\n");
 	}
 	else {
 		size_t ret;
@@ -1129,7 +1129,7 @@ static int plt_autocalibrate(struct nl80211_state *state, struct nl_cb *cb,
 		}
 	}
 	else {
-		fprintf(stderr, "Invalid value for TXBiPFEMAutoDetect %d",
+		fprintf(stderr, "Invalid value for TXBiPFEMAutoDetect %d\n",
 		        single_dual);
 		return 1;
 	}
