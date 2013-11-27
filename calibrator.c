@@ -26,9 +26,8 @@
 #include "ini.h"
 
 char calibrator_version[] = "0.77";
-#ifndef CONFIG_LIBNL20
+#if !defined CONFIG_LIBNL20 && !defined CONFIG_LIBNL32
 /* libnl 2.0 compatibility code */
-
 static inline struct nl_handle *nl_socket_alloc(void)
 {
 	return nl_handle_alloc();

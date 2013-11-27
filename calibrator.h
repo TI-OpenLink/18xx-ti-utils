@@ -11,7 +11,7 @@
 
 #define ETH_ALEN 6
 
-#ifndef CONFIG_LIBNL20
+#if !defined CONFIG_LIBNL20 && !defined CONFIG_LIBNL32
 #  define nl_sock nl_handle
 #endif
 
