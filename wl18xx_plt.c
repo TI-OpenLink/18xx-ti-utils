@@ -26,22 +26,117 @@
 SECTION(wl18xx_plt);
 
 
+static int plt_wl18xx_tx_tone_stop(struct nl80211_state *state, struct nl_cb *cb,
+                  struct nl_msg *msg, int argc, char **argv)
+{
+    struct nlattr *key;
+    struct wl18xx_cmd_phy_tx_tone_stop prms;
+
+    if (argc != 0)
+        return 1;
+
+    prms.test.id    = WL18XX_TEST_CMD_STOP_TX_TONE;
+
+    key = nla_nest_start(msg, NL80211_ATTR_TESTDATA);
+    if (!key) {
+        fprintf(stderr, "fail to nla_nest_start()\n");
+        return 1;
+    }
+
+    printf("Calibrator:: Stopping TX Tone\n");
+
+    NLA_PUT_U32(msg, WL1271_TM_ATTR_CMD_ID, WL1271_TM_CMD_TEST);
+    NLA_PUT(msg, WL1271_TM_ATTR_DATA, sizeof(prms), &prms);
+
+    nla_nest_end(msg, key);
+
+    return 0;
+
+nla_put_failure:
+    fprintf(stderr, "%s> building message failed\n", __func__);
+    return 2;
+}
+
+COMMAND(wl18xx_plt, tx_tone_stop , "",
+    NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_tx_tone_stop,
+    " Stop TX Tone\n");
+
+
+
+static int plt_wl18xx_tx_tone_start(struct nl80211_state *state, struct nl_cb *cb,
+                  struct nl_msg *msg, int argc, char **argv)
+{
+    struct nlattr *key;
+    struct wl18xx_cmd_phy_tx_tone_start prms;
+
+    if (argc != 4)
+        return 1;
+
+    prms.test.id    = WL18XX_TEST_CMD_START_TX_TONE;
+
+    prms.mode                       = (__u8)atoi(argv[0]);
+    prms.bin_index                  = (__s8)atoi(argv[1]);
+    prms.trigger_iqram_recording    = 0;
+    prms.sig_gen_cw_en              = 0;
+    prms.sig_gen_mod_en             = 0;
+    prms.ant_mode                   = (__u8)atoi(argv[2]);
+    prms.set_rx_aux_on              = 0;
+    prms.gain_index                 = (__u8)atoi(argv[3]);
+
+    if (prms.mode > 2)
+        return 1;
+
+    if ((prms.bin_index > 32) || (prms.bin_index < (-32)))
+        return 1;
+
+    if (prms.ant_mode > 2)
+        return 1;
+
+    if (prms.gain_index > 4)
+        return 1;
+
+
+    key = nla_nest_start(msg, NL80211_ATTR_TESTDATA);
+    if (!key) {
+        fprintf(stderr, "fail to nla_nest_start()\n");
+        return 1;
+    }
+
+    printf("Calibrator:: Starting TX Tone (mode=%d, bin_index=%d, ant_mode=%d, gain_index=%d)\n",
+           prms.mode, prms.bin_index, prms.ant_mode, prms.gain_index);
+
+    NLA_PUT_U32(msg, WL1271_TM_ATTR_CMD_ID, WL1271_TM_CMD_TEST);
+    NLA_PUT(msg, WL1271_TM_ATTR_DATA, sizeof(prms), &prms);
+
+    nla_nest_end(msg, key);
+
+    return 0;
+
+nla_put_failure:
+    fprintf(stderr, "%s> building message failed\n", __func__);
+    return 2;
+}
+
+COMMAND(wl18xx_plt, tx_tone_start , "<mode> <bin index> <antenna mode> <gain index>",
+    NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_tx_tone_start,
+    "Start TX Tone\n\n"
+    "<mode>\t\t tone mode:\n"
+    "\t\t\t0 = silence\n"
+    "\t\t\t1 = carrier feedthrough\n"
+    "\t\t\t2 = single tone\n"
+    "<bin index>\t the offset (in round number of bins) of the tone from the carrier: [(-32)-32]\n"
+    "<ant mode>\t antenna selection:\n"
+    "\t\t\t0 = auto\n"
+    "\t\t\t1 = TX1\n"
+    "\t\t\t2 = TX2\n"
+    "<gain index>\t PA gain step: 2.4GHz: 0-1, 5GHz: 0-4\n");
+
+
 static int  plt_wl18xx_phy_reg_write(struct nl80211_state *state, struct nl_cb *cb,
 			      struct nl_msg *msg, int argc, char **argv)
 {
 	struct nlattr *key;
 	struct wl18xx_cmd_phy_reg_write prms;
-	struct fw_version fw_ver_valid={{8,4,0,0,2}};
-
-	/* Validate the FW supported version (given 3 args before) */
-	if (is_fw_ver_valid(*(argv-3), &fw_ver_valid)) {
-		printf("\tFail: the FW version does not support this command\n");
-		printf("\tThe FW supported verstion starting from %d.%d.%d.%d.%d\n",
-				fw_ver_valid.ver[0], fw_ver_valid.ver[1],
-				fw_ver_valid.ver[2], fw_ver_valid.ver[3],
-				fw_ver_valid.ver[4]);
-		return 1;
-	}
 
 	if (argc != 2)
 		return 1;
@@ -74,39 +169,6 @@ COMMAND(wl18xx_plt, phy_reg_write , "<addr> <data> ",
 	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_phy_reg_write,
 	" Write PHY register for PLT.\n");
 
-static int __write_phy_register(struct nl80211_state *state, char *addr, char *val)
-{
-	char *prms[5] = { "wlan0", "wl18xx_plt", "phy_reg_write"};
-	prms[3] = addr;
-	prms[4] = val;
-	int rc;
-	rc = handle_cmd(state, II_NETDEV, ARRAY_SIZE(prms), prms);
-	if (rc < 0) {
-		fprintf(stderr, "Fail to write to PHY register (addr=%s, value=%s)\n", addr, val);
-		return 1;
-	}
-	return 0;
-}
-
-static int plt_wl18xx_tx_tone(struct nl80211_state *state, struct nl_cb *cb,
-			      struct nl_msg *msg, int argc, char **argv)
-{
-	char *prms[2] = {"0x2c100", "0x1703"};
-	int rc;
-	rc = __write_phy_register(state, "0x22138", "0x3C0") ;
-	if (rc)
-		return rc;
-	rc = __write_phy_register(state, "0x22034", "0x1");
-	if (rc)
-		return rc;
-
-	printf("Calibrator:: Starting TX Tone...\n");
-	return plt_wl18xx_phy_reg_write(state, cb, msg, ARRAY_SIZE(prms), prms);
-}
-
-COMMAND(wl18xx_plt, tx_tone , "",
-	NL80211_CMD_TESTMODE, 0, CIB_NETDEV, plt_wl18xx_tx_tone,
-	" Set TX Tone\n");
 
 static int plt_wl18xx_display_phy_reg_read(struct nl_msg *msg, void *arg)
 {
@@ -140,17 +202,6 @@ static int  plt_wl18xx_phy_reg_read(struct nl80211_state *state, struct nl_cb *c
 {
 	struct nlattr *key;
 	struct wl18xx_cmd_phy_reg_read prms;
-	struct fw_version fw_ver_valid={{8,4,0,0,2}};
-
-	/* Validate the FW supported version (given 3 args before) */
-	if (is_fw_ver_valid(*(argv-3), &fw_ver_valid)) {
-		printf("\tFail: the FW version does not support this command\n");
-		printf("\tThe FW supported verstion starting from %d.%d.%d.%d.%d\n",
-				fw_ver_valid.ver[0], fw_ver_valid.ver[1],
-				fw_ver_valid.ver[2], fw_ver_valid.ver[3],
-				fw_ver_valid.ver[4]);
-		return 1;
-	}
 
 	if (argc != 1)
 		return 1;
@@ -191,18 +242,6 @@ static int  plt_wl18xx_set_antenna_mode_5G(struct nl80211_state *state, struct n
 {
 	struct nlattr *key;
 	struct wl18xx_cmd_set_antenna_mode_5G prms;
-	struct fw_version fw_ver_valid={{8,4,0,0,2}};
-
-	/* Validate the FW supported version (given 3 args before) */
-	if (is_fw_ver_valid(*(argv-3), &fw_ver_valid)) {
-		printf("\tFail: the FW version does not support this command\n");
-		printf("\tThe FW supported verstion starting from %d.%d.%d.%d.%d\n",
-				fw_ver_valid.ver[0], fw_ver_valid.ver[1],
-				fw_ver_valid.ver[2], fw_ver_valid.ver[3],
-				fw_ver_valid.ver[4]);
-		return 1;
-	}
-
 
 	if (argc != 4)
 		return 1;
@@ -251,17 +290,6 @@ static int  plt_wl18xx_set_antenna_mode_24G(struct nl80211_state *state, struct 
 {
 	struct nlattr *key;
 	struct wl18xx_cmd_set_antenna_mode_24G prms;
-	struct fw_version fw_ver_valid={{8,4,0,0,2}};
-
-	/* Validate the FW supported version (given 3 args before) */
-	if (is_fw_ver_valid(*(argv-3), &fw_ver_valid)) {
-		printf("\tFail: the FW version does not support this command\n");
-		printf("\tThe FW supported verstion starting from %d.%d.%d.%d.%d\n",
-				fw_ver_valid.ver[0], fw_ver_valid.ver[1],
-				fw_ver_valid.ver[2], fw_ver_valid.ver[3],
-				fw_ver_valid.ver[4]);
-		return 1;
-	}
 
 	if (argc != 6)
 		return 1;

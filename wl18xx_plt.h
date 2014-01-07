@@ -40,39 +40,42 @@ enum wl18xx_test_cmds {
 	/*  0xf    */	WL18XX_TEST_CMD_DEBUG,
 	/*  0x10   */	WL18XX_TEST_CMD_CLPC_COMMANDS,
 	/*  0x11   */	WL18XX_TEST_CMD_RESERVED,
-	/*  0x11   */	WL18XX_TEST_CMD_RX_STAT_STOP,
-	/*  0x12   */	WL18XX_TEST_CMD_RX_STAT_START,
-	/*  0x13   */	WL18XX_TEST_CMD_RX_STAT_RESET,
-	/*  0x14   */	WL18XX_TEST_CMD_RX_STAT_GET,
-	/*  0x15   */	WL18XX_TEST_CMD_LOOPBACK_START,
-	/*  0x16   */	WL18XX_TEST_CMD_LOOPBACK_STOP,
-	/*  0x17   */	WL18XX_TEST_CMD_GET_FW_VERSIONS,
-	/*  0x18   */	WL18XX_TEST_CMD_INI_FILE_RADIO_PARAM,
-	/*  0x19   */	WL18XX_TEST_CMD_RUN_CALIBRATION_TYPE,
-	/*  0x1a   */	WL18XX_TEST_CMD_TX_GAIN_ADJUST,
-	/*  0x1b   */	WL18XX_TEST_CMD_UPDATE_PD_BUFFER_ERRORS,
-	/*  0x1c   */	WL18XX_TEST_CMD_UPDATE_PD_REFERENCE_POINT,
-	/*  0x1d   */	WL18XX_TEST_CMD_INI_FILE_GENERAL_PARAM,
-	/*  0x1e   */	WL18XX_TEST_CMD_SET_EFUSE,
-	/*  0x1f   */	WL18XX_TEST_CMD_GET_EFUSE,
-	/*  0x20   */	WL18XX_TEST_CMD_TEST_TONE,
-	/*  0x21   */	WL18XX_TEST_CMD_POWER_MODE,
-	/*  0x22   */	WL18XX_TEST_CMD_SMART_REFLEX,
-	/*  0x23   */	WL18XX_TEST_CMD_CHANNEL_RESPONSE,
-	/*  0x24   */	WL18XX_TEST_CMD_DCO_ITRIM_FEATURE,
-	/*  0x25   */	WL18XX_TEST_CMD_START_TX_SIMULATION,
-	/*  0x26   */	WL18XX_TEST_CMD_STOP_TX_SIMULATION,
-	/*  0x27   */	WL18XX_TEST_CMD_START_RX_SIMULATION,
-	/*  0x28   */	WL18XX_TEST_CMD_STOP_RX_SIMULATION,
-	/*  0x29   */	WL18XX_TEST_CMD_GET_RX_STATISTICS,
-	/*  0x2a   */	WL18XX_TEST_CMD_SET_NVS_VERSION,
-	/*  0x2b   */	WL18XX_TEST_CMD_CHANNEL_TUNE,
-	/*  0x2c   */	WL18XX_TEST_CMD_TX_POWER,
-	/*  0x2d    */	WL18XX_TEST_CMD_SET_ANTENNA_MODE_24G,
-	/*  0x2e    */  WL18XX_TEST_CMD_GET_CALIB_RESULT,
-	/*  0x2f    */  WL18XX_TEST_CMD_SET_ANTENNA_MODE_5G,
-	/*  0x30    */  WL18XX_TEST_CMD_PHY_ADDR_READ,
-	/*  0x31    */  WL18XX_TEST_CMD_PHY_ADDR_WRITE,
+	/*  0x12   */	WL18XX_TEST_CMD_RX_STAT_STOP,
+	/*  0x13   */	WL18XX_TEST_CMD_RX_STAT_START,
+	/*  0x14   */	WL18XX_TEST_CMD_RX_STAT_RESET,
+	/*  0x15   */	WL18XX_TEST_CMD_RX_STAT_GET,
+	/*  0x16   */	WL18XX_TEST_CMD_LOOPBACK_START,
+	/*  0x17   */	WL18XX_TEST_CMD_LOOPBACK_STOP,
+	/*  0x18   */	WL18XX_TEST_CMD_GET_FW_VERSIONS,
+	/*  0x19   */	WL18XX_TEST_CMD_INI_FILE_RADIO_PARAM,
+	/*  0x1a   */	WL18XX_TEST_CMD_RUN_CALIBRATION_TYPE,
+	/*  0x1b   */	WL18XX_TEST_CMD_TX_GAIN_ADJUST,
+	/*  0x1c   */	WL18XX_TEST_CMD_UPDATE_PD_BUFFER_ERRORS,
+	/*  0x1d   */	WL18XX_TEST_CMD_UPDATE_PD_REFERENCE_POINT,
+	/*  0x1e   */	WL18XX_TEST_CMD_INI_FILE_GENERAL_PARAM,
+	/*  0x1f   */	WL18XX_TEST_CMD_SET_EFUSE,
+	/*  0x20   */	WL18XX_TEST_CMD_GET_EFUSE,
+	/*  0x21   */	WL18XX_TEST_CMD_TEST_TONE,
+	/*  0x22   */	WL18XX_TEST_CMD_POWER_MODE,
+	/*  0x23   */	WL18XX_TEST_CMD_SMART_REFLEX,
+	/*  0x24   */	WL18XX_TEST_CMD_CHANNEL_RESPONSE,
+	/*  0x25   */	WL18XX_TEST_CMD_DCO_ITRIM_FEATURE,
+	/*  0x26   */	WL18XX_TEST_CMD_START_TX_SIMULATION,
+	/*  0x27   */	WL18XX_TEST_CMD_STOP_TX_SIMULATION,
+	/*  0x28   */	WL18XX_TEST_CMD_START_RX_SIMULATION,
+	/*  0x29   */	WL18XX_TEST_CMD_STOP_RX_SIMULATION,
+	/*  0x2a   */	WL18XX_TEST_CMD_GET_RX_STATISTICS,
+	/*  0x2b   */   /*WL18XX_TEST_CMD_INI_FILE_RF_EXTENDED_PARAM*/
+	/*  0x2c   */	WL18XX_TEST_CMD_SET_NVS_VERSION,
+	/*  0x2d   */	WL18XX_TEST_CMD_CHANNEL_TUNE,
+	/*  0x2e   */	WL18XX_TEST_CMD_TX_POWER,
+	/*  0x2f   */	WL18XX_TEST_CMD_SET_ANTENNA_MODE_24G,
+	/*  0x30   */   WL18XX_TEST_CMD_GET_CALIB_RESULT,
+	/*  0x31   */   WL18XX_TEST_CMD_SET_ANTENNA_MODE_5G,
+	/*  0x32   */   WL18XX_TEST_CMD_PHY_ADDR_READ,
+	/*  0x33   */   WL18XX_TEST_CMD_PHY_ADDR_WRITE,
+	/*  0x34   */   WL18XX_TEST_CMD_START_TX_TONE,
+	/*  0x35   */   WL18XX_TEST_CMD_STOP_TX_TONE,
 };
 
 struct wl18xx_cmd_channel_tune {
@@ -205,6 +208,27 @@ struct wl18xx_cmd_phy_reg_write { /* TEST_CMD_PHY_REG_WRITE */
 
 	__le32 data;
 	__le32 addr;
+} __attribute__((packed));
+
+struct wl18xx_cmd_phy_tx_tone_start { /* TEST_CMD_START_TX_TONE */
+    struct wl1271_cmd_header header;
+    struct wl1271_cmd_test_header test;
+
+    __le32 radio_status;
+
+    __u8   mode;
+    __s8   bin_index;
+    __u8   trigger_iqram_recording;
+    __u8   sig_gen_cw_en;
+    __u8   sig_gen_mod_en;
+    __u8   ant_mode;
+    __u8   set_rx_aux_on;
+    __u8   gain_index;
+} __attribute__((packed));
+
+struct wl18xx_cmd_phy_tx_tone_stop { /* TEST_CMD_STOP_TX_TONE */
+    struct wl1271_cmd_header header;
+    struct wl1271_cmd_test_header test;
 } __attribute__((packed));
 
 #endif /* __WL18XX_PLT_H__ */

@@ -32,11 +32,9 @@ static: $(OBJS)
 	$(CC) $(LDFLAGS) --static $(OBJS) $(LIBS) -o calibrator
 
 install:
-	@echo Copy files to $(NFSROOT)/home/root
-	@cp -f ./calibrator $(NFSROOT)/home/root
-	@chmod 755 $(NFSROOT)/home/root/calibrator
-	@cp -f ./scripts/wl12xx-tool.sh $(NFSROOT)/home/root
-	@chmod 755 $(NFSROOT)/home/root/wl12xx-tool.sh
+	@echo Copy files to $(NFSROOT)/usr/bin
+	@cp -f ./calibrator $(NFSROOT)/usr/bin
+	@chmod 755 $(NFSROOT)/usr/bin/calibrator
 
 clean:
 	@rm -f *.o calibrator uim
